@@ -62,6 +62,10 @@ if (process.env.SSO_COOKIE_SECRET.length < 32) {
 }
 
 const app = express();
+// The API runs behind a reverse proxy (Caddy) and Docker's port forwarding, both on private addresses. Trust them for
+// X-Forwarded-For, so req.ip is the visitor's real address (rate limits, audit logs) instead of the proxy's address,
+// which every visitor shared. Only private and loopback hops are trusted, so a visitor cannot spoof the header.
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 const PORT = process.env.PORT || 3001;
 
 // Request ID tracing. One UUID per request, attached to req.id, echoed on

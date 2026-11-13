@@ -48,7 +48,7 @@ router.get('/:year/:month/pre-close-checks', auth, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT id, status, closed_at FROM accounting_periods
         WHERE period_year = $1 AND period_month = $2
-          AND ($3::int IS NULL OR company_id = $3)
+          AND ($3::uuid IS NULL OR company_id = $3)
         LIMIT 1`,
       [year, month, companyId]
     );

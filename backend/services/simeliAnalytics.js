@@ -131,7 +131,7 @@ async function getSimeliAnalytics(months = 12) {
       `SELECT r.id, r.agent_key, r.trigger, r.status, r.mode, r.dry_run,
               r.observations, r.actions_taken, r.escalations, r.errors,
               r.summary, r.started_at, r.duration_ms,
-              d.name AS agent_name
+              d.display_name AS agent_name
          FROM agent_runs r
          LEFT JOIN agent_definitions d ON d.id = r.agent_id
         ORDER BY r.started_at DESC

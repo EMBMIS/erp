@@ -59,8 +59,24 @@ export const AuthProvider = ({ children }) => {
       // says nothing about the token, and logging out here would just bounce
       // a legitimately signed-in user back to the login screen on a reload
       // that happened to race a network hiccup.
-      if (error.response) {
+      //
+      // The same goes for answers that are not about the token at all: 429
+      // (rate limited) and 5xx. Logging out on those turned a busy minute into
+      // every user being thrown back to the login screen. Keep the stored
+      // session; the next request tries again.
+      const status = error.response?.status
+      if (status === 401 || status === 403) {
         logout()
+      } else {
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser))
+            setIsAuthenticated(true)
+          } catch {
+            // unreadable stored user: stay signed out
+          }
+        }
       }
     } finally {
       setLoading(false)

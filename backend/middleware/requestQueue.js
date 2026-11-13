@@ -83,11 +83,36 @@ const queueMiddleware = async (req, res, next) => {
   }
 };
 
-// Enhanced rate limiting for high-traffic endpoints (key by tenant or IP)
+// Who a request counts against. This limiter is mounted on /api before any
+// route's auth middleware runs, so req.user and req.companyId are never set
+// here: keying on them always fell through to req.ip. Behind the reverse proxy
+// (Caddy, then Docker) every visitor arrived from the same address, so the
+// whole platform shared one 200-a-minute allowance, and a handful of people
+// clicking around got every request refused with 429 and were logged out.
+// A signed-in user now has an allowance of their own, read from their token
+// (verified, so a forged token cannot mint fresh allowances); anyone else
+// counts against their real address (server.js sets `trust proxy`).
+const jwt = require('jsonwebtoken');
+function rateLimitKey(req) {
+  const header = req.headers.authorization || '';
+  if (header.startsWith('Bearer ') && process.env.JWT_SECRET) {
+    try {
+      const claims = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+      const id = claims.userId || claims.id || claims.sub;
+      if (id) return `user:${id}`;
+    } catch {
+      // invalid or expired token: count it against the address
+    }
+  }
+  return `ip:${req.ip}`;
+}
+
+// Enhanced rate limiting for high-traffic endpoints (key by user, else by address)
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: Number(process.env.API_RATE_LIMIT_MAX) || 200, // 200/min per tenant/IP; E2E/CI raise via API_RATE_LIMIT_MAX
-  keyGenerator: (req) => req.user?.companyId || req.companyId || req.ip,
+  // One page can make 20-40 calls; 600 a minute per user leaves room for fast navigation. API_RATE_LIMIT_MAX overrides.
+  max: Number(process.env.API_RATE_LIMIT_MAX) || 600,
+  keyGenerator: rateLimitKey,
   message: {
     error: 'Too many requests',
     retryAfter: '1 minute'
@@ -100,7 +125,7 @@ const apiLimiter = rateLimit({
 const heavyApiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 50, // 50 requests per minute for heavy endpoints
-  keyGenerator: (req) => req.user?.companyId || req.companyId || req.ip,
+  keyGenerator: rateLimitKey,
   message: {
     error: 'Rate limit exceeded for resource-intensive endpoint',
     retryAfter: '1 minute'

@@ -79,7 +79,7 @@ async function getProjectsAnalytics(months = 12) {
                   ), 0) AS labour,
                   COALESCE((
                     SELECT SUM(po.total_amount) FROM purchase_orders po
-                     WHERE po.project_id = p.id AND po.deleted_at IS NULL
+                     WHERE po.project_id = p.id AND po.status NOT IN ('CANCELLED', 'REJECTED')
                   ), 0) AS committed
              FROM projects p
             WHERE p.deleted_at IS NULL AND p.status NOT IN ('CANCELLED')
@@ -145,7 +145,7 @@ async function getProjectsAnalytics(months = 12) {
            )), 0)::float8 AS labour,
            COALESCE(SUM((
              SELECT SUM(po.total_amount) FROM purchase_orders po
-              WHERE po.project_id = p.id AND po.deleted_at IS NULL
+              WHERE po.project_id = p.id AND po.status NOT IN ('CANCELLED', 'REJECTED')
            )), 0)::float8 AS committed
          FROM projects p
         WHERE p.deleted_at IS NULL AND p.status <> 'CANCELLED'`

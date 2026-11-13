@@ -113,7 +113,7 @@ async function getCrmAnalytics(months = 12) {
     pool.query(
       `SELECT d.id, d.deal_number, d.title, d.stage, d.probability,
               d.value::float8 AS value, d.expected_close_date,
-              COALESCE(NULLIF(TRIM(c.trade_name), ''), c.legal_name, d.title) AS customer
+              COALESCE(NULLIF(TRIM(c.customer_name), ''), c.legal_entity_name, d.title) AS customer
          FROM deals d
          LEFT JOIN customers c ON c.id = d.customer_id
         WHERE d.deleted_at IS NULL

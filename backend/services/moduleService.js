@@ -71,7 +71,20 @@ async function setModuleEnabled(companyId, moduleKey, enabled) {
  * so calling it again just leaves already-decided rows alone.
  */
 async function seedForCompany(companyId, businessTypeCode) {
-  if (!businessTypeCode) return;
+  // No business type chosen (the sign-up form's default): every module on.
+  // Seeding nothing left a new company with only the core modules, so Sales,
+  // Procurement, Inventory, Manufacturing, CRM, HR, Projects and Mail were all
+  // switched off and their screens refused every request. A company switches
+  // off what it does not use in Admin > Modules.
+  if (!businessTypeCode) {
+    await pool.query(
+      `INSERT INTO company_modules (company_id, module_key, enabled)
+         SELECT $1, key, true FROM modules WHERE NOT is_core
+       ON CONFLICT (company_id, module_key) DO NOTHING`,
+      [companyId]
+    );
+    return;
+  }
   await pool.query(
     `INSERT INTO company_modules (company_id, module_key, enabled)
        SELECT $1, module_key, true

@@ -507,10 +507,9 @@ router.post('/register-company', authRateLimit, async (req, res) => {
         const mailboxService = require('../services/mailboxService')
         await mailboxService.createCompanyMailbox(company, user.id)
 
-        if (business_type_code) {
-          const moduleService = require('../services/moduleService')
-          await moduleService.seedForCompany(company.id, business_type_code)
-        }
+        // With a business type, its default modules; without one, every module.
+        const moduleService = require('../services/moduleService')
+        await moduleService.seedForCompany(company.id, business_type_code)
       })
 
       if (business_type_code) {

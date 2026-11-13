@@ -45,21 +45,18 @@ async function getReportingAnalytics(months = 12) {
       ),
 
       pool.query(
-        `SELECT COALESCE(NULLIF(TRIM(category), ''), 'GENERAL') AS category,
+        `SELECT x.category,
                 COUNT(*)::int AS n,
                 COALESCE((
                   SELECT COUNT(*) FROM report_runs r
-                   WHERE r.report_id IN (
-                     SELECT id FROM report_definitions d2
-                      WHERE d2.deleted_at IS NULL
-                        AND COALESCE(NULLIF(TRIM(d2.category), ''), 'GENERAL')
-                            = COALESCE(NULLIF(TRIM(d.category), ''), 'GENERAL')
-                   )
+                    JOIN report_definitions d2 ON d2.id = r.report_id
+                   WHERE d2.deleted_at IS NULL
+                     AND COALESCE(NULLIF(TRIM(d2.category), ''), 'GENERAL') = x.category
                      AND r.run_at >= date_trunc('month', CURRENT_DATE)
                 ), 0)::int AS runs
-           FROM report_definitions d
-          WHERE deleted_at IS NULL
-          GROUP BY 1
+           FROM (SELECT COALESCE(NULLIF(TRIM(category), ''), 'GENERAL') AS category
+                   FROM report_definitions WHERE deleted_at IS NULL) x
+          GROUP BY x.category
           ORDER BY n DESC
           LIMIT 8`
       ),

@@ -66,6 +66,9 @@ router.post('/', auth, requireAdmin, handle(async (req) => {
   const companyScope = require('../services/companyScope');
   await companyScope.runWithCompany(company.id, () =>
     ChartOfAccounts.seedFinanceMasterData(company.id, req.user.id));
+  // Modules: the business type's defaults, or every module when none is given (as at sign-up).
+  await companyScope.runWithCompany(company.id, () =>
+    require('../services/moduleService').seedForCompany(company.id, req.body.business_type_code));
   // Every company gets a mailbox (company-code@embmis.com) the moment it
   // exists — same "provisioning step right after creation" shape as the
   // chart-of-accounts seed above. mailboxes is not RLS-scoped (see migration
