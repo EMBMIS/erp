@@ -24,12 +24,14 @@ const MODEL_NAME = 'Xenova/all-MiniLM-L6-v2';
 // The transformers cache defaults to node_modules/@xenova/transformers/.cache,
 // which is root-owned and read-only after the image drops to USER node — the
 // first embed would fail with EACCES on a fresh container and silently disable
-// every RAG retrieval. Redirect it to /app/cache (created and chowned in the
-// Dockerfile) where the runtime user can write.
+// every RAG retrieval. Redirect it to cache/ beside the backend's code: /app/cache
+// in the image (created and chowned in the Dockerfile), backend/cache when run
+// from a checkout. (A hard-coded /app/cache failed with EACCES outside Docker,
+// in CI and in local development.) TRANSFORMERS_CACHE overrides it.
 (async () => {
   try {
     const { env } = await import('@xenova/transformers');
-    env.cacheDir = '/app/cache';
+    env.cacheDir = process.env.TRANSFORMERS_CACHE || require('path').join(__dirname, '..', '..', 'cache');
   } catch (_) { /* non-fatal: embed will surface its own error if unavailable */ }
 })();
 

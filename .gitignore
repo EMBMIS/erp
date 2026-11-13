@@ -80,3 +80,6 @@ backend/.env
 frontend/i18n-export/*
 !frontend/i18n-export/README.md
 !frontend/i18n-export/TRANSLATOR-PROMPT.md
+
+# Model cache of the local embedding model (backend/services/ai/localEmbeddings.js)
+backend/cache/
