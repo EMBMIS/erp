@@ -56,6 +56,11 @@ services:
       migrate: { condition: service_completed_successfully }
     ports:
       - '127.0.0.1:${BACKEND_PORT:-3001}:3001'
+    # Every setting in .env.production reaches the backend (mail, AI providers, Google login, company details, ...).
+    # The entries under `environment` are derived or fixed for this stack and take precedence.
+    env_file:
+      - path: .env.production
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3001
