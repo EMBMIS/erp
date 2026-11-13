@@ -1,0 +1,106 @@
+/* ===========================================================================
+   EMBMIS tokens — the semantic layer.
+
+   tokens.generated.css holds the raw ramps (from scripts/design/palette.mjs).
+   This file names what they are FOR. Components use these names, never a hex.
+
+   Colour has four meanings and no others:
+     brand   the system is acting, or this is the primary action
+     ok      done, posted, healthy           warn  needs attention soon
+     risk    blocked, overdue, destructive   ink   everything else
+   =========================================================================== */
+@import './tokens.generated.css';
+
+:root,
+.light,
+.dark {
+  color-scheme: light;
+
+  /* Ground and surfaces */
+  --bg: rgb(var(--canvas));
+  --bg-surface: rgb(var(--surface));
+  --bg-raised: rgb(var(--raised));
+  --bg-sunken: rgb(var(--sunken));
+  --bg-overlay: rgb(var(--overlay));
+  --bg-hover: rgb(var(--c-ink-100) / 0.7);
+  --bg-selected: rgb(var(--c-brand-50));
+  --scrim: rgb(13 13 15 / 0.42);
+
+  /* Lines */
+  --line: rgb(var(--c-ink-200));
+  --line-strong: rgb(var(--c-ink-300));
+  --line-soft: rgb(var(--c-ink-100));
+
+  /* Text */
+  --fg: rgb(var(--t-ink-900));
+  --fg-2: rgb(var(--t-ink-700));
+  --fg-muted: rgb(var(--t-ink-600));
+  --fg-faint: rgb(var(--t-ink-500));
+  --fg-disabled: rgb(var(--t-ink-400));
+
+  /* Brand — Ultramarine, from the logo mark */
+  --brand: rgb(var(--c-brand-600));
+  --brand-hover: rgb(var(--c-brand-700));
+  --brand-soft: rgb(var(--c-brand-50));
+  --brand-line: rgb(var(--c-brand-200));
+  --brand-fg: rgb(var(--t-brand-600));
+  --on-brand: #ffffff;
+
+  /* State */
+  --ok: rgb(var(--c-ok-500));
+  --ok-soft: rgb(var(--c-ok-50));
+  --ok-fg: rgb(var(--t-ok-700));
+  --warn: rgb(var(--c-warn-500));
+  --warn-soft: rgb(var(--c-warn-50));
+  --warn-fg: rgb(var(--t-warn-700));
+  --risk: rgb(var(--c-risk-500));
+  --risk-soft: rgb(var(--c-risk-50));
+  --risk-fg: rgb(var(--t-risk-700));
+  --risk-solid: rgb(var(--c-risk-600));
+
+  /* Focus: always visible, always the brand, 2px outside the control */
+  --focus: rgb(var(--c-brand-500));
+
+  /* Type */
+  --font-sans: 'Instrument Sans Variable', 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  /* Depth: only overlays cast a shadow */
+  --shadow-overlay: 0 1px 2px rgb(13 13 15 / 0.06), 0 12px 32px -8px rgb(13 13 15 / 0.18);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 240ms;
+
+  /* Layout */
+  --topbar-h: 48px;
+  --rail-w: 232px;
+  --rail-w-collapsed: 56px;
+  --bottomnav-h: 60px;
+  --row-h: 40px;
+  --row-h-compact: 32px;
+}
+
+.dark {
+  color-scheme: dark;
+  color: var(--fg);
+  --bg-hover: rgb(var(--c-ink-100));
+  --bg-selected: rgb(var(--c-brand-50));
+  --scrim: rgb(0 0 0 / 0.6);
+  --line: rgb(var(--c-ink-200));
+  --line-strong: rgb(var(--c-ink-300));
+  --line-soft: rgb(var(--c-ink-100));
+  --brand-line: rgb(var(--c-brand-200));
+  --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -8px rgb(0 0 0 / 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }
+}

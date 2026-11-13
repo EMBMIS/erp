@@ -1,0 +1,46 @@
+{
+  "name": "embmis-erp",
+  "version": "1.0.0",
+  "description": "EMBMIS Business OS — a business operating system that runs applications, with AI throughout",
+  "main": "backend/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "migrate": "cd backend && npm run migrate",
+    "db:reset": "cd backend && npm run db:reset",
+    "db:setup": "cd backend && npm run db:setup",
+    "db:add-fields": "cd backend && npm run db:add-fields",
+    "test:e2e": "npx playwright test --config e2e/playwright.config.js",
+    "lint": "eslint backend/ frontend/ --max-warnings 620",
+    "check:a11y": "node scripts/check-a11y-budget.mjs",
+    "check:a11y:report": "node scripts/check-a11y-budget.mjs --report"
+  },
+  "keywords": [
+    "erp",
+    "inventory",
+    "nodejs",
+    "react",
+    "postgresql",
+    "openai"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.40.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^10.8.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EMBMIS/erp.git"
+  }
+}

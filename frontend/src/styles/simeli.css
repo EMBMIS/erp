@@ -1,0 +1,501 @@
+/* ===========================================================================
+   SIMELI — the agent workspace (/ai/chat) and the blocks its answers are
+   made of (components/simeli/*).
+
+   Tokens only. Simeli sits on the same surfaces, lines and type as every
+   other screen; the one thing it adds is brand colour where the system is
+   acting — a stage running, the caret while text streams, the working mark.
+
+     --sim-identity / --sim-live / --sim-data   brand: the system acting, its data
+     --sim-decide                               warn: a decision waiting on a person
+
+   No glass, no glow, no gradients. Motion is bound to state that is true: the
+   mark turns while a run is live, the caret blinks while text is arriving, a
+   block's entrance plays once. Everything stops under reduced motion.
+   =========================================================================== */
+
+.simeli {
+  --sim-identity: rgb(var(--c-brand-600));
+  --sim-identity-lum: rgb(var(--t-brand-600));
+  --sim-live: rgb(var(--c-brand-500));
+  --sim-live-lum: rgb(var(--t-brand-600));
+  --sim-data: rgb(var(--c-brand-600));
+  --sim-data-lum: rgb(var(--t-brand-600));
+  --sim-decide: rgb(var(--t-warn-700));
+
+  --sim-surface: rgb(var(--surface));
+  --sim-surface-lift: rgb(var(--surface));
+  --sim-line: rgb(var(--c-ink-200));
+  --sim-line-lit: rgb(var(--c-brand-300));
+
+  position: relative;
+  min-height: 0;
+  /* Lift the workspace clear of the on-screen keyboard. --sim-keyboard is
+     written from visualViewport (see AIChat.jsx). */
+  padding-bottom: var(--sim-keyboard, 0px);
+  transition: padding-bottom 120ms ease-out;
+}
+
+/* ---------------------------------------------------------------------------
+   Panels and blocks.
+   --------------------------------------------------------------------------- */
+.sim-panel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: var(--sim-surface);
+  border: 1px solid var(--sim-line);
+}
+
+.sim-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+.sim-block {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--sim-line);
+  background: var(--sim-surface-lift);
+  animation: sim-block-in 320ms var(--ease) both;
+}
+
+@keyframes sim-block-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.sim-block-head {
+  padding: 9px 13px 7px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  border-bottom: 1px solid var(--sim-line);
+}
+
+/* ---------------------------------------------------------------------------
+   The working mark (AgentLoop). A ring around a core; the ring turns only
+   while a run is live.
+   --------------------------------------------------------------------------- */
+.sim-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--mark-size, 20px);
+  height: var(--mark-size, 20px);
+}
+
+.sim-mark-core {
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  background: var(--sim-identity);
+}
+
+.sim-mark-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgb(var(--c-brand-200));
+  border-top-color: var(--sim-identity);
+}
+
+.sim-mark.is-working .sim-mark-ring { animation: sim-spin 1.4s linear infinite; }
+
+@keyframes sim-spin { to { transform: rotate(360deg); } }
+
+/* ---------------------------------------------------------------------------
+   The agent loop: done (check, dimmed), active (ring turning), pending
+   (hollow, faint), blocked on a person (warn).
+   --------------------------------------------------------------------------- */
+.sim-loop { display: flex; flex-direction: column; gap: 1px; }
+
+.sim-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 5px 4px;
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--fg-muted);
+}
+
+.sim-stage-dot {
+  position: relative;
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 1.5px solid var(--sim-line);
+  display: grid;
+  place-items: center;
+}
+
+.sim-stage-count {
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-faint);
+}
+
+/* The activity tree: module → area → what was counted there. */
+.sim-tree { font-size: 12px; line-height: 1.5; }
+
+.sim-tree-module {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 0 2px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.sim-tree-branch {
+  position: relative;
+  margin-left: 5px;
+  padding-left: 14px;
+  color: var(--fg-muted);
+}
+
+.sim-tree-branch::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 50%;
+  width: 9px;
+  border-left: 1px solid var(--sim-line);
+  border-bottom: 1px solid var(--sim-line);
+  border-bottom-left-radius: 5px;
+}
+
+.sim-tree-leaf { color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------------------
+   Result blocks (ResultBlocks.jsx).
+   --------------------------------------------------------------------------- */
+.sim-driver {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.sim-driver:last-child { border-bottom: 0; }
+
+.sim-driver-icon {
+  flex: none;
+  width: 27px;
+  height: 27px;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  background: var(--tint, rgb(var(--c-ink-100)));
+  color: var(--tone, var(--sim-data));
+  border: 1px solid var(--sim-line);
+}
+
+.sim-impact {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--tone, var(--sim-data));
+}
+
+.sim-projection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 13px;
+}
+
+.sim-projection-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.sim-projection-value.is-after { color: var(--tone, var(--fg)); }
+
+.sim-projection-arrow {
+  flex: none;
+  width: 46px;
+  height: 1px;
+  position: relative;
+  background: var(--line-strong);
+}
+
+.sim-projection-arrow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -3px;
+  border: 3.5px solid transparent;
+  border-left-color: var(--line-strong);
+}
+
+/* A reference to a real ERP record (or an attached file). */
+.sim-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  border: 1px solid var(--sim-line);
+  background: rgb(var(--sunken));
+  color: var(--fg-2);
+  transition: border-color 140ms ease;
+}
+
+.sim-ref:hover { border-color: var(--line-strong); color: var(--fg); }
+
+/* ---------------------------------------------------------------------------
+   A chart Simeli drew (SimeliChart.jsx). No container: it sits in the answer
+   the way a paragraph does.
+   --------------------------------------------------------------------------- */
+.sim-visual {
+  position: relative;
+  margin: 14px 0 16px;
+  width: 100%;
+}
+
+.sim-visual-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 0 0 6px;
+}
+
+.sim-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 8px; }
+
+.sim-chip {
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--sim-line);
+  background: rgb(var(--surface));
+  color: var(--fg-muted);
+}
+
+.sim-chip:hover { color: var(--fg); border-color: var(--line-strong); }
+
+.sim-chip.is-on {
+  color: var(--fg);
+  border-color: rgb(var(--c-ink-400));
+  background: rgb(var(--c-ink-100));
+}
+
+.sim-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.sim-key:hover { color: var(--fg); }
+.sim-key.is-off { opacity: 0.4; }
+
+.sim-key-swatch { height: 2px; width: 14px; flex: none; border-radius: 999px; }
+
+.sim-readout {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  min-width: 108px;
+  padding: 7px 9px;
+  border-radius: var(--radius);
+  border: 1px solid var(--sim-line);
+  background: rgb(var(--overlay));
+  box-shadow: var(--shadow-overlay);
+  font-size: 11px;
+}
+
+.sim-visual-foot { padding: 8px 0 0; }
+
+/* ---------------------------------------------------------------------------
+   Actions and their lifecycle. Proposed waits on a person (warn), executing
+   is the system acting (brand), done is ok, denied is flat.
+   --------------------------------------------------------------------------- */
+.sim-action { border-color: rgb(var(--c-warn-300)); }
+
+.sim-action-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons used inside the result blocks. Same shape as the design system's
+   Button (components/ui/Button.jsx): secondary by default, brand for the
+   one primary action, warn-outlined for a decision.
+   --------------------------------------------------------------------------- */
+.sim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgb(var(--c-ink-300));
+  background: rgb(var(--surface));
+  color: var(--fg);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.sim-btn:hover { background: rgb(var(--c-ink-100)); }
+.sim-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+.sim-btn-primary {
+  border-color: transparent;
+  color: var(--on-brand);
+  background: var(--brand);
+}
+
+.sim-btn-primary:hover { background: var(--brand-hover); }
+
+.sim-btn-decide {
+  border-color: rgb(var(--c-warn-300));
+  color: rgb(var(--t-warn-700));
+  background: rgb(var(--c-warn-50));
+}
+
+.sim-btn-decide:hover { border-color: rgb(var(--c-warn-500)); }
+
+/* The microphone, while it is open. */
+.sim-listening {
+  border-color: rgb(var(--c-risk-500)) !important;
+  color: rgb(var(--t-risk-700));
+  animation: sim-listen 1.6s ease-in-out infinite;
+}
+
+@keyframes sim-listen {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--c-risk-500) / 0.3); }
+  50%      { box-shadow: 0 0 0 4px rgb(var(--c-risk-500) / 0); }
+}
+
+/* Jump-to-latest, only while the reader has scrolled away from the bottom. */
+.sim-jump {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 3;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+  background: rgb(var(--overlay));
+  box-shadow: var(--shadow-overlay);
+  animation: sim-jump-in 200ms var(--ease) both;
+}
+
+@keyframes sim-jump-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Three dots while the model composes its first token. */
+.sim-thinking { display: inline-flex; gap: 3px; align-items: center; }
+
+.sim-thinking i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sim-live);
+  animation: sim-think 1.25s ease-in-out infinite;
+}
+
+.sim-thinking i:nth-child(2) { animation-delay: 0.16s; }
+.sim-thinking i:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes sim-think {
+  0%, 60%, 100% { opacity: 0.25; }
+  30%           { opacity: 1; }
+}
+
+/* Streaming caret at the end of text still arriving. */
+.sim-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--sim-live);
+  animation: sim-caret-blink 1.05s steps(2, start) infinite;
+}
+
+@keyframes sim-caret-blink { 50% { opacity: 0; } }
+
+/* Chart draw-on, once, when it mounts. */
+.sim-draw {
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+  animation: sim-draw-on 900ms var(--ease) forwards;
+}
+
+@keyframes sim-draw-on { to { stroke-dashoffset: 0; } }
+
+.sim-draw-fade { animation: sim-fade-in 500ms 400ms ease-out both; }
+
+@keyframes sim-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Scrollers: contained, thin. Wide children scroll inside their own box. */
+.sim-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--c-ink-300)) transparent;
+}
+
+.sim-wide { overflow-x: auto; overscroll-behavior-x: contain; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-mark.is-working .sim-mark-ring,
+  .sim-caret,
+  .sim-jump,
+  .sim-thinking i,
+  .sim-draw,
+  .sim-draw-fade,
+  .sim-block,
+  .sim-listening {
+    animation: none !important;
+  }
+  .sim-draw { stroke-dashoffset: 0; }
+  .sim-caret { opacity: 1; }
+}

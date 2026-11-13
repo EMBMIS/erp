@@ -1,0 +1,53 @@
+# Multi-stage production image for the Simeli ERP API.
+#
+# backend/Dockerfile (used by docker-compose.yml today) is single-stage: it
+# npm-installs and copies the source into the same layer it ships. That's fine
+# for the compose workflow, but a multi-stage build keeps the final image free
+# of anything only needed to assemble it — no npm cache, no lockfile-resolution
+# intermediates, no build-time layer history — and separates "install deps"
+# from "copy source" so an app-code change doesn't invalidate the npm layer.
+# Build from the repo root: `docker build -f docker/Dockerfile.prod -t qira-backend:prod .`
+
+# --- deps ---------------------------------------------------------------
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY backend/package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# --- runtime --------------------------------------------------------------
+FROM node:20-alpine AS runtime
+
+# dumb-init gives PID 1 real signal handling — without it Node runs as PID 1
+# and ignores SIGTERM, so `docker stop` would wait out the full timeout and
+# kill the process before server.js's graceful-shutdown handler (drain
+# in-flight requests, close the DB pool) ever runs.
+RUN apk add --no-cache dumb-init
+
+WORKDIR /app
+
+# Source first, deps second: a host-side backend/node_modules (there almost
+# always is one, from local `npm install`) would otherwise land from this
+# COPY and silently overwrite the clean --omit=dev install from the deps
+# stage — a root .dockerignore (see repo root) also excludes it, but the copy
+# order makes this correct even if that ever drifts.
+COPY backend/ .
+COPY --from=deps /app/node_modules ./node_modules
+
+# Drop root. `node` (uid 1000) ships with the base image. Only the two
+# directories actually written to at runtime need to be writable — the rest
+# of the tree stays read-only to the application.
+RUN mkdir -p uploads exports && chown -R node:node uploads exports node_modules
+USER node
+
+EXPOSE 3001
+ENV NODE_ENV=production
+ENV PORT=3001
+
+# GET /api/health (not just /health) so the same probe path works whether the
+# container is reached directly or through the nginx.conf reverse proxy above,
+# which only forwards /api to this service.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "server.js"]

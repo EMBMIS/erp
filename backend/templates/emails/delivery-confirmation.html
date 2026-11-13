@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Confirmation Required - {{so_number}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+            font-size: 28px;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .order-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .info-item {
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            color: #495057;
+            font-size: 14px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .company-info {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Delivery Confirmation Required</h1>
+            <p style="margin: 10px 0 0 0; color: #6c757d;">Your order has been delivered and requires confirmation</p>
+        </div>
+
+        <div style="margin: 25px 0;">
+            <p>Dear {{customer_name}},</p>
+            <p>Great news! Your order has been successfully delivered to your location. We need you to confirm receipt of the delivery to complete your order.</p>
+        </div>
+
+        <div class="order-info">
+            <h3>📋 Delivery Details</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Order Number</div>
+                    <div class="info-value">{{so_number}}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Order Date</div>
+                    <div class="info-value">{{order_date}}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Delivery Date</div>
+                    <div class="info-value">{{delivery_date}}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Delivery Address</div>
+                    <div class="info-value">{{delivery_address}}</div>
+                </div>
+            </div>
+        </div>
+
+        {{response_section}}
+
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+            <h4 style="margin-top: 0; color: #856404;">⏰ Important Notice</h4>
+            <p style="margin-bottom: 0; color: #856404; font-size: 14px;">
+                Please confirm delivery within <strong>48 hours</strong> to avoid delays in processing. 
+                If you experience any issues with your delivery, please report them immediately.
+            </p>
+        </div>
+
+        <div style="margin: 25px 0;">
+            <p>If you have any questions about your delivery or need assistance, please don't hesitate to contact our customer service team.</p>
+            <p>Thank you for choosing {{company_name}}!</p>
+        </div>
+
+        <div class="company-info">
+            <strong>{{company_name}}</strong><br>
+            📧 {{company_email}} | 📞 {{company_phone}}
+        </div>
+
+        <div class="footer">
+            <p>This is an automated delivery confirmation email. Please do not reply directly to this message.</p>
+            <p>If you need immediate assistance, please contact us using the information above.</p>
+        </div>
+    </div>
+</body>
+</html>

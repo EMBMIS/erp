@@ -1,0 +1,1496 @@
+/* ===========================================================================
+   EMBMIS legacy primitives (.bos-*) — mapped onto the token system.
+
+   These classes predate the design system and are still used by the module
+   overviews and the instrument charts (components/bos/*). Their old
+   "energy" vocabulary — blue, cyan, violet, magenta glows on a navy ground —
+   is retired. Every --embmis-* name now resolves to a semantic token from
+   tokens.css, so these screens speak the same language as the rest:
+     blue / indigo / violet / ultraviolet  → brand (the system is acting)
+     cyan / magenta                         → ink (they never meant anything)
+     green / amber / rose                   → ok / warn / risk
+   New code uses components/ui and tokens.css directly, not these classes.
+   =========================================================================== */
+
+:root, .light, .dark {
+  --embmis-void: var(--bg);
+  --embmis-canvas: var(--bg);
+  --embmis-surface: var(--bg-surface);
+  --embmis-surface-raised: var(--bg-raised);
+  --embmis-surface-sunken: var(--bg-sunken);
+  --embmis-surface-hover: var(--bg-hover);
+  --embmis-chrome: var(--bg-surface);
+
+  --embmis-line: var(--line);
+  --embmis-line-strong: var(--line-strong);
+  --embmis-line-soft: var(--line-soft);
+  --embmis-inner-light: transparent;
+
+  --embmis-text: var(--fg-2);
+  --embmis-text-strong: var(--fg);
+  --embmis-text-muted: var(--fg-muted);
+  --embmis-text-faint: var(--fg-faint);
+
+  --embmis-blue: var(--brand);
+  --embmis-indigo: var(--brand);
+  --embmis-ultraviolet: var(--brand);
+  --embmis-violet: var(--brand);
+  --embmis-info: var(--brand);
+  --embmis-cyan: rgb(var(--c-ink-500));
+  --embmis-magenta: rgb(var(--c-ink-500));
+  --embmis-green: var(--ok);
+  --embmis-amber: var(--warn);
+  --embmis-rose: var(--risk);
+
+  --embmis-blue-lum: var(--brand);
+  --embmis-cyan-lum: rgb(var(--c-ink-500));
+  --embmis-violet-lum: var(--brand);
+
+  --embmis-blue-tint: var(--brand-soft);
+  --embmis-cyan-tint: rgb(var(--c-ink-100));
+  --embmis-violet-tint: var(--brand-soft);
+  --embmis-magenta-tint: rgb(var(--c-ink-100));
+  --embmis-green-tint: var(--ok-soft);
+  --embmis-amber-tint: var(--warn-soft);
+  --embmis-rose-tint: var(--risk-soft);
+
+  --embmis-shadow-panel: none;
+  --embmis-shadow-lift: none;
+  --embmis-shadow-pop: var(--shadow-overlay);
+  --embmis-atmosphere: none;
+  --embmis-grid: transparent;
+  --embmis-grid-size: 46px;
+
+  --embmis-radius: var(--radius-lg);
+  --embmis-radius-sm: var(--radius);
+  --embmis-radius-lg: var(--radius-lg);
+  --embmis-border: var(--line);
+  --embmis-panel: var(--bg-surface);
+}
+
+
+
+/* ===========================================================================
+   Environment — the ground the whole product stands on.
+   =========================================================================== */
+
+/* Atmospheric light + a faint computational grid. Two layers so the grid can
+   fade out toward the bottom without touching the light. */
+
+/* ===========================================================================
+   Panels — one surface primitive, three intensities.
+   Restrained translucency: enough to feel like layered glass, never so much
+   that a data table sitting on it becomes hard to read.
+   =========================================================================== */
+
+.bos-panel {
+  position: relative;
+  isolation: isolate;
+  background: var(--embmis-surface);
+  border: 1px solid var(--embmis-line);
+  border-radius: var(--embmis-radius);
+  box-shadow: var(--embmis-shadow-panel);
+  /* No backdrop-filter. The surface sits at ~0.9 alpha, so a blur behind it is
+     invisible — but it forces the compositor to re-blur the backdrop of every
+     panel on the page each frame. Twenty of those is the whole frame budget.
+     The alpha carries the glass instead. */
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+/* Internal illumination, not a fill. Two very low-opacity washes — ultraviolet
+   welling from the lower left, electric blue from the upper right — sit INSIDE
+   the card and fade to nothing before they reach the middle. This is what makes
+   a surface read as lit from within rather than painted a colour. Kept under
+   10% because the data has to stay the brightest thing on the card. */
+.dark .bos-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(80% 60% at 100% 0%, rgba(59, 130, 246, 0.045), transparent 58%),
+    radial-gradient(75% 65% at 0% 100%, rgba(124, 58, 237, 0.05), transparent 56%);
+  transition: opacity 0.25s ease;
+}
+
+/* Under the pointer the card's own light comes up, and it comes up in the
+   card's accent — so a violet module glows violet and a cyan one cyan, rather
+   than every hover being the same purple. */
+.dark .bos-panel:hover {
+  border-color: color-mix(in srgb, var(--bos-accent, var(--embmis-violet)) 50%, transparent);
+  box-shadow:
+    0 1px 0 rgba(147, 197, 253, 0.16) inset,
+    0 0 34px -10px color-mix(in srgb, var(--bos-accent, var(--embmis-violet)) 70%, transparent),
+    0 28px 70px -32px rgba(0, 0, 0, 0.95);
+}
+
+.dark .bos-panel:hover::after {
+  background:
+    radial-gradient(90% 70% at 100% 0%,
+      color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 16%, transparent), transparent 62%),
+    radial-gradient(85% 75% at 0% 100%, rgba(124, 58, 237, 0.14), transparent 60%);
+}
+
+/* A single hairline of light along the top edge — the thing that reads as
+   "this surface is lit from above" and gives the stack its depth. */
+.bos-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--embmis-inner-light) 18%,
+    var(--embmis-inner-light) 82%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.bos-panel--raised {
+  background: var(--embmis-surface-raised);
+}
+
+.bos-panel--sunken {
+  background: var(--embmis-surface-sunken);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Interactive panels lift toward the viewer and pick up a hue on their edge.
+   The hue is set per-module via --bos-accent, so a warning module glows amber
+   and an AI module glows violet without a second class. */
+.bos-panel--interactive {
+  --bos-accent: var(--embmis-blue);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease, box-shadow 0.28s ease, background-color 0.28s ease;
+}
+
+.bos-panel--interactive:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--bos-accent) 45%, transparent);
+  box-shadow: var(--embmis-shadow-lift);
+}
+
+.bos-panel--interactive:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--bos-accent) 70%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bos-accent) 22%, transparent);
+}
+
+/* ===========================================================================
+   Typography — enterprise density with a confident display voice.
+   =========================================================================== */
+
+.bos-eyebrow {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--embmis-text-muted);
+  /* Was line-height: 1, which is correct on one line and collides on two. A
+     title is allowed to wrap rather than clip — see ModuleHeader. */
+  line-height: 1.35;
+}
+
+.bos-title {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(1.85rem, 2.6vw, 2.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  font-weight: 640;
+  color: var(--embmis-text-strong);
+}
+
+.bos-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--embmis-text-muted);
+  letter-spacing: 0.005em;
+}
+
+.bos-caption {
+  font-size: 11.5px;
+  color: var(--embmis-text-faint);
+  letter-spacing: 0.01em;
+}
+
+.bos-text { color: var(--embmis-text); }
+.bos-text-strong { color: var(--embmis-text-strong); }
+.bos-text-muted { color: var(--embmis-text-muted); }
+.bos-text-faint { color: var(--embmis-text-faint); }
+
+/* Section heading: eyebrow + a small computational tick pattern, the motif the
+   reference uses to mark a system readout rather than a page heading. */
+
+@keyframes bos-tick {
+  0%, 100% { transform: scaleY(0.4); opacity: 0.3; }
+  50%      { transform: scaleY(1);   opacity: 0.8; }
+}
+
+/* ===========================================================================
+   Energy accents — semantic colour as a single source of truth.
+   =========================================================================== */
+
+.bos-accent-blue   { --bos-accent: var(--embmis-blue);   --bos-tint: var(--embmis-blue-tint); }
+.bos-accent-cyan   { --bos-accent: var(--embmis-cyan);   --bos-tint: var(--embmis-cyan-tint); }
+.bos-accent-violet { --bos-accent: var(--embmis-violet); --bos-tint: var(--embmis-violet-tint); }
+.bos-accent-green  { --bos-accent: var(--embmis-green);  --bos-tint: var(--embmis-green-tint); }
+.bos-accent-amber  { --bos-accent: var(--embmis-amber);  --bos-tint: var(--embmis-amber-tint); }
+.bos-accent-rose   { --bos-accent: var(--embmis-rose);   --bos-tint: var(--embmis-rose-tint); }
+.bos-accent-magenta { --bos-accent: var(--embmis-magenta); --bos-tint: var(--embmis-magenta-tint); }
+
+/* Icon plate: a small tinted square with a luminous glyph. Reads as an
+   instrument face, not a coloured pill. */
+.bos-plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--bos-accent, var(--embmis-blue));
+  background: var(--bos-tint, var(--embmis-blue-tint));
+  border: 1px solid color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 26%, transparent);
+}
+
+.bos-plate--sm { width: 26px; height: 26px; border-radius: 8px; }
+.bos-plate--lg { width: 38px; height: 38px; border-radius: 11px; }
+
+.bos-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--bos-accent, var(--embmis-blue));
+  background: var(--bos-tint, var(--embmis-blue-tint));
+  border: 1px solid color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 22%, transparent);
+  white-space: nowrap;
+}
+
+/* Delta readout: direction is carried by colour AND glyph, never colour alone. */
+.bos-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.bos-delta--up   { color: var(--embmis-green); }
+.bos-delta--down { color: var(--embmis-rose); }
+
+/* ===========================================================================
+   Instruments — the small live visuals embedded in modules.
+   =========================================================================== */
+
+/* Proportional meter: a real ratio drawn as an energy bar inside its track. */
+
+@keyframes bos-grow { from { transform: scaleX(0); transform-origin: left; } }
+
+/* Live status dot with a slow radar ping. */
+
+@keyframes bos-ping {
+  0%   { transform: scale(0.6); opacity: 0.8; }
+  70%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* Timeline rail used by the activity stream — a lit thread the events hang on. */
+
+@keyframes bos-sweep {
+  0%   { transform: translateX(-30%); opacity: 0; }
+  12%  { opacity: 0.75; }
+  88%  { opacity: 0.75; }
+  100% { transform: translateX(430%); opacity: 0; }
+}
+
+/* ===========================================================================
+   Controls — buttons that feel like commands in an operating system.
+   =========================================================================== */
+
+.bos-btn {
+  /* Stops Chromium painting its own native control on top of ours. Without it
+     a DISABLED button reverts to the platform's grey-white face and the
+     author's background-image is dropped — see .bos-btn:disabled below. */
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  border: 1px solid var(--embmis-line-strong);
+  color: var(--embmis-text);
+  background: var(--embmis-surface-raised);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease,
+    background-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.bos-btn:hover {
+  color: var(--embmis-text-strong);
+  border-color: color-mix(in srgb, var(--embmis-blue) 45%, transparent);
+  background: var(--embmis-surface-hover);
+}
+
+.bos-btn:active { transform: translateY(1px); }
+
+.bos-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--embmis-blue) 26%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   Disabled.
+
+   There was no rule here at all, and the result was worse than plain: between
+   Preflight's `button { background-image: none }` and Chromium's native
+   painting of a disabled control, a disabled PRIMARY button lost its gradient
+   and kept `color: #fff` — white text on a white pill. The label was in the
+   DOM, correct, and invisible. "Designing…" on the Studio's build button read
+   to the user as the button going blank.
+
+   A disabled control still has to say two things: it is here, and it is not
+   available. Dimmed, never erased.
+   --------------------------------------------------------------------------- */
+.bos-btn:disabled,
+.bos-btn[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+
+/* Hover must not reach a control that cannot be pressed — including the
+   pointer that is still sitting on the button that just disabled itself. */
+.bos-btn:disabled:hover,
+.bos-btn[aria-disabled='true']:hover {
+  color: var(--embmis-text);
+  border-color: var(--embmis-line-strong);
+  background: var(--embmis-surface-raised);
+  box-shadow: none;
+  filter: none;
+}
+
+/* The gradient is restated rather than inherited, because the rules that strip
+   it are the ones that only apply when the control is disabled. The solid
+   background-color underneath is the belt to that braces: if anything removes
+   the image again, the text still lands on violet rather than on white. */
+.bos-btn--primary:disabled,
+.bos-btn--primary[aria-disabled='true'],
+.bos-btn--primary:disabled:hover,
+.bos-btn--primary[aria-disabled='true']:hover {
+  color: #fff;
+  border-color: transparent;
+  background-color: #5b4ad8;
+  background-image: linear-gradient(90deg, #7c3aed, #4f46e5);
+  box-shadow: none;
+  filter: none;
+}
+
+/* The one saturated command in the product: talking to Simeli. Violet→blue,
+   because violet is the AI layer and blue is the system it acts on. */
+.bos-btn--primary {
+  color: #fff;
+  border-color: transparent;
+  border-radius: 8px;
+  background-image: linear-gradient(90deg, #7c3aed, #4f46e5);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.6);
+  transition: box-shadow 0.25s ease, filter 0.25s ease, transform 0.18s ease;
+}
+
+.bos-btn--primary:hover {
+  color: #fff;
+  filter: brightness(1.1);
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.85);
+}
+
+@keyframes bos-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* The spec's ghost button is a dark-theme object: #E2E8F0 text on a #2A3650
+   border. Both are invisible on a white card, so the literal values are scoped
+   to .dark and the light theme keeps a readable equivalent. */
+.bos-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--embmis-line-strong);
+  border-radius: 8px;
+  color: var(--embmis-text-muted);
+}
+
+.dark .bos-btn--ghost {
+  border-color: #2a3650;
+  color: #e2e8f0;
+}
+
+.bos-btn--ghost:hover {
+  background: transparent;
+  border-color: rgba(139, 92, 246, 0.6);
+  color: var(--embmis-text-strong);
+  box-shadow: 0 0 16px -4px rgba(124, 58, 237, 0.5);
+}
+
+.bos-btn--sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+.bos-btn--icon { padding: 8px; width: 34px; height: 34px; }
+
+.bos-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--embmis-blue);
+  letter-spacing: 0.01em;
+  transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.bos-link:hover { color: var(--embmis-cyan); }
+
+/* Command field — the search / ask-Simeli input in the top bar. */
+.bos-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 10px 0 11px;
+  border-radius: 10px;
+  border: 1px solid var(--embmis-line);
+  background: var(--embmis-surface-sunken);
+  color: var(--embmis-text-muted);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.bos-field:focus-within {
+  border-color: color-mix(in srgb, var(--embmis-blue) 55%, transparent);
+  background: var(--embmis-surface-raised);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--embmis-blue) 16%, transparent);
+}
+
+.bos-field input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: 13px;
+  color: var(--embmis-text-strong);
+}
+
+.bos-field input::placeholder { color: var(--embmis-text-faint); }
+
+/* ===========================================================================
+   Rows — dense, scannable list items inside modules.
+   =========================================================================== */
+
+.bos-row {
+  --bos-accent: var(--embmis-blue);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 11px;
+  border-radius: var(--embmis-radius-sm);
+  border: 1px solid transparent;
+  text-align: left;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.bos-row:hover {
+  background: var(--embmis-surface-sunken);
+  border-color: var(--embmis-line);
+}
+
+/* An attention row wears its severity on its leading edge, so the list reads
+   by colour down the left margin before any text is parsed. */
+.bos-row--flagged {
+  background: var(--embmis-surface-sunken);
+  border-color: var(--embmis-line-soft);
+  border-left: 2px solid var(--bos-accent);
+}
+
+.bos-row--flagged:hover {
+  border-color: var(--embmis-line);
+  border-left-color: var(--bos-accent);
+  transform: translateX(2px);
+}
+
+/* A quiet control that only declares itself on hover — used for the chrome
+   affordances (collapse, expand) that must not compete with content. */
+.bos-hoverable {
+  color: var(--embmis-text-faint);
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.bos-hoverable:hover {
+  color: var(--embmis-text-strong);
+  background: var(--embmis-surface-sunken);
+}
+
+/* ===========================================================================
+   Navigation rail — the product's spine.
+   The active section is marked by a luminous edge rather than a filled pill:
+   a pill competes with the modules on the canvas, an edge reads as "the system
+   is currently here" and stays out of the way.
+   =========================================================================== */
+
+.bos-nav-row {
+  position: relative;
+  border-radius: var(--embmis-radius-sm);
+  color: var(--embmis-text-muted);
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.bos-nav-row:hover {
+  color: var(--embmis-text-strong);
+  background: var(--embmis-surface-sunken);
+}
+
+/* ===========================================================================
+   Scrollbars — thin and tonal, so an inner scroll area doesn't punch a light
+   grey gutter through a dark panel.
+   =========================================================================== */
+
+.bos-scroll { scrollbar-width: thin; scrollbar-color: var(--embmis-line-strong) transparent; }
+.bos-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.bos-scroll::-webkit-scrollbar-track { background: transparent; }
+.bos-scroll::-webkit-scrollbar-thumb {
+  background: var(--embmis-line-strong);
+  border-radius: 999px;
+}
+.bos-scroll::-webkit-scrollbar-thumb:hover { background: var(--embmis-text-faint); }
+
+/* ===========================================================================
+   Motion — arrival, breathing, propagation.
+   =========================================================================== */
+
+@keyframes bos-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bos-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.9;  transform: scale(1.04); }
+}
+
+/* The lattice blocks drift on their own beats, so the stack reads as being
+   assembled rather than as one rigid object nudged up and down. */
+@keyframes bos-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3.5px); }
+}
+
+/* The Simeli identity line: the user's own name carries the AI energy ramp,
+   which is the one place in the product where type itself is luminous. */
+
+/* The symbiote's stage: a pocket of lit space the object floats in, so it
+   belongs to the panel instead of sitting on top of it. */
+
+/* A value that just changed pulses its own colour rather than flashing a box. */
+@keyframes bos-charge {
+  0%   { color: var(--embmis-cyan); text-shadow: 0 0 18px color-mix(in srgb, var(--embmis-cyan) 60%, transparent); }
+  100% { color: inherit; text-shadow: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bos-btn--primary {
+    animation: none !important;
+  }
+  .bos-panel--interactive,
+  .bos-row,
+  .bos-btn {
+    transition: none !important;
+  }
+  .bos-panel--interactive:hover,
+  .bos-row--flagged:hover { transform: none !important; }
+}
+
+/* ===========================================================================
+   Shell chrome — the top command bar and the module rail.
+   ---------------------------------------------------------------------------
+   The product's spine is two objects, not one. Horizontally, the top bar
+   carries identity (the mark), the module the user is inside, and the system's
+   own controls. Vertically, the rail carries every module as a labelled plate,
+   so switching module is a single click from anywhere and the current one is
+   always visible without opening a menu.
+
+   Both sit on the chrome surface — a shade nearer the void than a panel — so
+   the canvas between them reads as the work area and the chrome reads as the
+   frame around it.
+   =========================================================================== */
+
+/* The wordmark. Two lines, tightly locked, so the mark and the name read as
+   one object at the small size the bar allows. */
+
+/* A module tab. Inactive tabs are quiet text; the active one takes the text
+   ramp's top value and a luminous underline anchored to the bar's own edge —
+   the underline is the thing that says "this bar belongs to that module". */
+
+/* ---------------------------------------------------------------------------
+   The module rail.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   EMISSION.
+   ---------------------------------------------------------------------------
+   The rule for this whole file: a lit thing is not a coloured thing. Something
+   that emits has a hot core, a falloff, and it spills onto what is behind it.
+   Something that is merely coloured has a fill and an edge. Everything below
+   turns the second into the first.
+
+   All of it is text-shadow, box-shadow and gradients — never filter: blur() or
+   backdrop-filter, both of which cost a full offscreen surface per element and
+   took this page to 14fps the last time they were used at this scale.
+   --------------------------------------------------------------------------- */
+
+/* The data itself emits. A KPI is the brightest thing on its card and should
+   read as the source of the light on it, not as white text sitting on navy.
+   Two shadows: a tight one that fattens the glyph into its own halo, and a
+   wide dim one that puts light onto the surface around it. */
+.dark .bos-metric--lg {
+  text-shadow:
+    0 0 10px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 55%, transparent),
+    0 0 28px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 34%, transparent),
+    0 0 62px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 18%, transparent);
+}
+
+/* An SVG <text> takes a glow through its own drop-shadow, not text-shadow. */
+
+/* Status indicators are lamps, not labels. The tint becomes a lit plate: the
+   text goes to near-white in the accent's hue, the border carries the accent
+   at strength, and a small pool of it lands outside the chip. */
+.dark .bos-chip {
+  color: color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 30%, #ffffff);
+  background: color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 17%, transparent);
+  border-color: color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 45%, transparent);
+  box-shadow:
+    0 0 12px -3px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 75%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 30%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 55%, transparent);
+}
+
+/* Controls are lit surfaces too. A ghost button in this environment is a pane
+   of glass with light caught on its top edge, not an outlined rectangle. */
+.dark .bos-btn {
+  box-shadow:
+    inset 0 1px 0 rgba(165, 205, 255, 0.14),
+    0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.dark .bos-btn--primary {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 0 22px -6px var(--embmis-violet),
+    0 0 46px -14px var(--embmis-blue);
+}
+
+.dark .bos-btn:not(.bos-btn--primary):hover {
+  box-shadow:
+    inset 0 1px 0 rgba(165, 205, 255, 0.2),
+    0 0 20px -8px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 80%, transparent);
+}
+
+/* The icon plate beside a row: a small lit tile rather than a tinted square. */
+.dark .bos-plate {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 26%, transparent),
+    0 0 14px -6px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 85%, transparent);
+}
+
+/* Every panel edge catches a little of the environment, so the cards read as
+   glass in a lit room rather than as flat plates with a hairline drawn on. */
+.dark .bos-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(165, 205, 255, 0.10),
+    0 0 0 1px rgba(80, 120, 220, 0.05),
+    0 18px 48px -30px rgba(0, 0, 0, 0.9);
+}
+
+/* Slightly stronger than before: the internal wash is the panel being lit from
+   outside, and at 4.5% it was doing nothing measurable. */
+.dark .bos-panel::after {
+  background:
+    radial-gradient(80% 60% at 100% 0%, rgba(56, 132, 255, 0.075), transparent 60%),
+    radial-gradient(75% 65% at 0% 100%, rgba(124, 58, 237, 0.085), transparent 58%);
+}
+
+/* The rail's selected module and the spine's selected screen are lit, because
+   "where am I" is a live state, not a highlight. */
+
+/* ---------------------------------------------------------------------------
+   Chart furniture. A gridline exists to be measured against and then ignored,
+   so it is a token per theme rather than one hardcoded value that is either
+   invisible on white or too loud on near-black.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   The pipeline. Readings in a left gutter, the shape in the middle, the
+   stage-to-stage ratio on the right — nothing is ever drawn on top of the band
+   it describes, which is what makes it readable at the widths where a funnel
+   is most interesting.
+   --------------------------------------------------------------------------- */
+
+/* The ratio sits on the boundary between two bands, which is the thing it
+   describes — hence the half-height offset onto the gap below its own row. */
+
+/* Over 100% means the later stage is bigger than the one before it. Marked, not
+   hidden: it is usually the most interesting number on the panel. */
+
+/* ---------------------------------------------------------------------------
+   A proportion as a card floor: one reading against the base it came from.
+   Used where a distribution would be the wrong claim — "23 out of stock" is a
+   share of the item base, not a category alongside two others.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   The completion ring: one fraction, not a breakdown. The gap in the track is
+   as much the reading as the arc is.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   The process chain. The arrows carry the same travelling light the network
+   links do, because they are saying the same thing: material moved this way.
+   --------------------------------------------------------------------------- */
+
+/* One packet of light per arrow, travelling the direction material does. */
+
+@keyframes bos-chain-flow { to { stroke-dashoffset: 0; } }
+
+/* Scrap leaves the process, so it hangs below the chain rather than sitting in
+   it — in line it would read as something material flows through. */
+
+/* ---------------------------------------------------------------------------
+   The module hero — a real 3D scene, built out of CSS transforms.
+
+   The figures used to be flat SVG line art, and they read as diagrams of
+   machines rather than machines. These are boxes and rings placed in an actual
+   perspective scene: the browser does the projection, a hinge that rotates
+   really rotates, and faces that turn away foreshorten on their own.
+
+   Every animation below is a transform or an opacity, and nothing that moves
+   carries a filter — a filter on an animated element re-rasterises it every
+   frame, which is what took this page to 14fps once. The glow on moving parts
+   comes from box-shadow baked into the static element, which the compositor
+   rasterises once and then only moves.
+
+   Because animations beat inline styles in the cascade, every keyframe here
+   restates the element's base translation. Dropping it would snap the part
+   back to the scene origin on the first frame.
+   --------------------------------------------------------------------------- */
+
+/* A lit machine belongs in a dark room; on white it is a grey wireframe.
+   display rather than opacity, so light mode has no dead space and no
+   invisible animations still asking the compositor for frames. Same reason the
+   copy in a collapsed spine goes away entirely: a 3D scene animating inside a
+   zero-width column is compositor work with nothing on the other end. */
+
+/* The room the machine stands in. Static, so the gradient costs one paint. */
+
+/* Everything hangs off one point, posed isometric-ish. */
+
+/* A slow yaw across the whole scene. Without it a still 3D object is
+   indistinguishable from a drawing of one. */
+@keyframes bos-hero-survey {
+  0%, 100% { transform: rotateX(-16deg) rotateY(-32deg); }
+  50%      { transform: rotateX(-12deg) rotateY(-14deg); }
+}
+
+/* Every node in a figure: a zero-size anchor its faces hang off, keeping its
+   own 3D space so nested joints compose the way a linkage does. */
+
+/* --- Manufacturing: the arm ----------------------------------------------- */
+
+/* The column turns about vertical, carrying the whole arm with it. */
+
+@keyframes bos-hero-column {
+  0%, 100% { transform: translateY(30px) rotateY(-30deg); }
+  50%      { transform: translateY(30px) rotateY(34deg); }
+}
+
+/* Shoulder and elbow hinge in the arm's own plane. Each sweeps a narrow range
+   and eases at the ends — a joint that turns through 360 degrees is a fan.
+   Their periods are deliberately coprime-ish so the pose never repeats on a
+   short cycle. */
+
+@keyframes bos-hero-shoulder {
+  0%, 100% { transform: translateY(-18px) rotateZ(-9deg); }
+  50%      { transform: translateY(-18px) rotateZ(11deg); }
+}
+
+@keyframes bos-hero-elbow {
+  0%, 100% { transform: translateY(-78px) rotateZ(16deg); }
+  50%      { transform: translateY(-78px) rotateZ(-20deg); }
+}
+
+/* The part on the bed, settling. */
+
+@keyframes bos-hero-part {
+  0%, 100% { transform: translate3d(74px, 61px, 0); }
+  50%      { transform: translate3d(74px, 55px, 0); }
+}
+
+/* --- Sales and Finance: value in orbit ------------------------------------ */
+
+@keyframes bos-hero-yaw { to { transform: rotateY(360deg); } }
+
+/* Rotating the ring is what makes the body on it orbit — one transform for the
+   whole system rather than a path animation per body. */
+
+@keyframes bos-hero-spin     { to { transform: rotateZ(360deg); } }
+@keyframes bos-hero-spin-rev { to { transform: rotateZ(-360deg); } }
+
+/* The lit body sits under the scene, in ordinary 2D. See the note on Core in
+   HeroFigure: inside the scene it either foreshortens into an egg or, if
+   counter-rotated to face us, drags a composited-texture seam across the
+   figure. Its centre matches the stage's, so the rings still turn around it. */
+
+@keyframes bos-hero-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+/* --- Procurement: the supply sphere --------------------------------------- */
+
+/* The cage turns as one, so the scene animates a single transform however many
+   rings it is built from. */
+
+/* --- Inventory: the coil -------------------------------------------------- */
+
+/* The stack itself does not turn, and that is the point: a store holds. It also
+   keeps the packet legible — a bead can undo the tilt of the plane it rides,
+   but not a yaw its parent is animating underneath it, and under one it smears
+   into a streak. What moves here is the packet.
+
+   One packet running the outer ring: the store holds, something moves. */
+
+/* --- Projects: the stack -------------------------------------------------- */
+
+/* --- HR: the workforce ---------------------------------------------------- */
+
+/* A narrow sweep rather than a full turn: a crowd revolving is a carousel. */
+
+@keyframes bos-hero-survey-wide {
+  0%, 100% { transform: rotateY(-16deg); }
+  50%      { transform: rotateY(16deg); }
+}
+
+/* --- CRM: the web --------------------------------------------------------- */
+
+/* --- Reports: the blocks -------------------------------------------------- */
+
+/* --- Shared -------------------------------------------------------------- */
+
+/* Drift, on the independent `translate` property rather than on `transform`.
+   These bodies already carry a transform placing them in the scene, and a
+   keyframe on transform would have to restate it — one per body, since each
+   sits somewhere different. `translate` composes ahead of `transform`, so a
+   single rule drifts any body wherever it happens to live, and the stagger is
+   an inline animation-delay. */
+
+@keyframes bos-hero-float {
+  0%, 100% { translate: 0 0 0; }
+  50%      { translate: 0 -7px 0; }
+}
+
+
+/* A node that is doing something, on its own clock. Opacity only, so a bead
+   carrying an inline translate3d keeps its position. */
+
+@keyframes bos-hero-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+/* Reduced motion leaves the geometry — it is the picture — and stops the
+   clock. The scene keeps its posed angle, which is the point of the pose. */
+
+/* ---------------------------------------------------------------------------
+   The ambient field. Three animated properties in the whole component: two
+   group rotations and an opacity twinkle. Everything else is static geometry,
+   so it costs a paint once and nothing after that.
+   --------------------------------------------------------------------------- */
+
+/* Ambience belongs to the dark environment. On white it is grubby marks. */
+
+@keyframes bos-twinkle {
+  0%, 100% { fill-opacity: 0.22; }
+  50%      { fill-opacity: 1; }
+}
+
+@keyframes bos-spin-cw  { to { transform: rotate(360deg); } }
+@keyframes bos-spin-ccw { to { transform: rotate(-360deg); } }
+
+/* The spine's foot and the column under the insights: the two places the frame
+   would otherwise end in a slab of empty ground. */
+
+/* The module figure in the page masthead — top-left of the content, first row.
+
+   The column stretches to the height of the numbers beside it (see
+   ModuleMasthead) and the scene fills it, so the same figure reads as a short
+   band next to one row of KPIs and as a tall panel next to two.
+
+   `flex-basis` rather than a media query: the figure wraps onto its own line
+   when the numbers beside it drop under ~520px, which depends on whether the
+   navigation column is open — something a viewport query cannot see. */
+
+/* Light mode draws no figure (see .bos-hero3d), and a page that passes
+   module={null} draws none in either mode, so the column would be an empty
+   208px hole in the row. Take it out of the flow entirely.
+
+   After the .dark rule, not before: both selectors are (0,2,0), so at equal
+   specificity source order decides — written first, `display: block` won and
+   HR's empty column still measured 208px wide. */
+
+/* Fill the column rather than the fixed 240px the standalone block uses. */
+
+/* Sized for a 208px column: at full scale the wider figures (the supply globe,
+   the relation web) run past both edges. Both layers together — the core is
+   drawn outside the 3D scene, so scaling only the scene leaves a full-size
+   body inside shrunken orbits. */
+
+/* The core layer is positioned at a point, not a box, so scaling about its own
+   centre moves nothing. It has to scale about the block's origin to stay
+   registered with the scene. */
+
+/* The app shell's height.
+   ---------------------------------------------------------------------------
+   `h-screen` is 100vh, and on a mobile browser 100vh is the LARGE viewport —
+   the height the page would have if the URL bar were hidden. The shell also
+   sets overflow:hidden, so on a phone with the URL bar showing, the bottom
+   strip of every page was laid out below the visible area with no way to
+   scroll to it. On the Simeli workspace that strip contained the message box.
+
+   100dvh is the dynamic viewport: it tracks what is actually visible and
+   updates as the browser chrome slides away. The 100vh line stays first as the
+   fallback for anything that does not know dvh. */
+
+/* ---------------------------------------------------------------------------
+   The stock network. Nodes are lit spheres, links are lit paths, and the
+   readings sit over both — the diagram is the light, not a chart with colour
+   applied to it.
+   --------------------------------------------------------------------------- */
+
+/* The travelling dash. dasharray is a long gap with a short mark, so what runs
+   along the path is one bright packet rather than a marching ant trail. */
+
+@keyframes bos-network-flow {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   The donut. A distribution with its own total in the middle, so the ring is
+   never the thing being read as a value.
+   --------------------------------------------------------------------------- */
+
+/* A legend row beside a donut: swatch, name, value. */
+
+/* ---------------------------------------------------------------------------
+   A quick-action tile. A destination, not a card: it is the smallest thing on
+   the surface that can be pressed, so it carries a plate and a label and
+   nothing else, and it lifts on hover the way every other pressable module
+   does rather than inventing a fourth interaction language.
+   --------------------------------------------------------------------------- */
+
+/* Centred, icon over label — the arrangement a grid of equal destinations
+   wants, where nothing is more important than anything beside it. */
+
+/* Centring makes the label shrink to its own content, which leaves a `truncate`
+   with no width to truncate against — so a long label overflowed into the tile
+   beside it instead of clipping. */
+
+/* ---------------------------------------------------------------------------
+   A segmented progress bar: one segment per gate, coloured by what that gate
+   found. A single percentage says how far along a close is; this says which
+   parts of it are clear, which are merely pending, and which will refuse the
+   close outright — three different facts a bar cannot carry.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   The module spine — the active module's own screens, beside the rail.
+   Frame, not content: no card, no fill, one hairline against the work area, so
+   the only boxes on screen belong to the page.
+   --------------------------------------------------------------------------- */
+
+/* Closed, it takes no width and no border, so the work area gets the whole
+   pixel budget back. It stays in the tree — see the comment on the element —
+   which is why this collapses rather than unmounts. */
+
+/* A toolbar toggle that is currently on reads as lit, the same way an active
+   rail plate does — the state of the control is the state of the panel. */
+.bos-hoverable.is-on {
+  color: var(--embmis-blue);
+  background: color-mix(in srgb, var(--embmis-blue) 14%, transparent);
+}
+
+.dark .bos-hoverable.is-on {
+  color: color-mix(in srgb, var(--embmis-blue) 34%, #ffffff);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--embmis-blue) 26%, transparent);
+}
+
+/* The current screen is lit, not merely bolded — the same rule the rail uses,
+   so "where am I" reads the same way at both levels of the frame. */
+
+/* An icon over its own label. The label is not a tooltip: a rail whose meaning
+   only appears on hover makes the user hunt, and hunting is the thing a spine
+   exists to remove. */
+
+/* The flyout that carries a module's own pages. The rail names the module; the
+   flyout is where its screens live, so no route is lost to the narrower spine. */
+
+/* ---------------------------------------------------------------------------
+   A select pill — the period control over the pulse.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   Chart furniture — the annotation that names the crossing.
+   --------------------------------------------------------------------------- */
+
+/* The annotation is a dark purple pill, per the spec. */
+/* The pill carried a hardcoded near-black violet in both themes while its text
+   used the theme's own ink — which in light mode is near-black on near-black.
+   The surface is a token now, so the callout is legible whichever way round the
+   environment is. */
+
+/* A legend key: the mark's own shape, so a dashed forecast reads as dashed in
+   the legend too rather than as a second solid swatch. */
+
+/* ===========================================================================
+   Metric card — the pulse instrument at reference scale.
+   The reference sizes these to be read across a room: label small and quiet,
+   value large, delta on its own line, and the trend filling the card's floor.
+   =========================================================================== */
+
+.bos-metric-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--embmis-text-muted);
+  letter-spacing: 0.005em;
+}
+
+.bos-metric--lg {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.95rem, 1.2vw, 1.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.032em;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+  color: var(--embmis-text-strong);
+  white-space: nowrap;
+}
+
+/* ===========================================================================
+   Luminosity pass — the difference between "dark theme" and the reference.
+   ---------------------------------------------------------------------------
+   The reference does not get its look from darker greys. It gets it from light:
+   coloured light behind the panels, coloured light inside the icon plates, and
+   an edge on every lit thing. These rules add the light; the tokens above only
+   ever set the pigment.
+   =========================================================================== */
+
+/* An icon plate is a lit object, not a tinted square. The radial makes the
+   glyph sit in its own pool of colour, and the outer glow spills that colour
+   onto the panel underneath — which is what makes a row of six plates read as
+   six different energies instead of six grey boxes. */
+.bos-plate {
+  position: relative;
+  background:
+    radial-gradient(120% 120% at 30% 20%,
+      color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 42%, transparent),
+      color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 12%, transparent) 70%);
+  border-color: color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 45%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 12%, transparent),
+    0 4px 14px -4px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 55%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.dark .bos-plate { color: color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 82%, #fff); }
+
+/* A row lights its own plate on hover — the pointer is a light source. */
+.bos-row:hover .bos-plate,
+.bos-panel--interactive:hover .bos-plate {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 30%, transparent),
+    0 6px 22px -4px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 85%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 30%, transparent);
+}
+
+/* Panels pick up the atmosphere behind them rather than sitting on it as flat
+   plates. A one-pixel coloured rim at the top and a wash in the corner is
+   enough — any more and the data stops being the brightest thing on screen. */
+.dark .bos-panel {
+  background-image:
+    radial-gradient(120% 100% at 0% 0%, rgba(124, 58, 237, 0.10), transparent 58%),
+    radial-gradient(120% 100% at 100% 0%, rgba(34, 224, 245, 0.07), transparent 55%);
+}
+
+.dark .bos-panel--interactive:hover {
+  background-image:
+    radial-gradient(120% 100% at 0% 0%,
+      color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 18%, transparent), transparent 58%),
+    radial-gradient(120% 100% at 100% 0%, rgba(34, 224, 245, 0.10), transparent 55%);
+}
+
+/* The metric value carries a faint bloom in the dark theme, the way a lit
+   readout does. Kept to a whisper: a glowing number is unreadable. */
+.dark .bos-metric--lg {
+  text-shadow: 0 0 26px color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 45%, transparent);
+}
+
+/* ===========================================================================
+   The lattice — a solid you can push.
+   =========================================================================== */
+
+/* On hover the assembly comes apart along its own lattice axes (each block
+   carries its own --bx/--by), then settles back. It reads as a thing made of
+   parts, which is the entire point of the object. */
+
+/* ===========================================================================
+   Instruments that read as charts.
+   The flat 6px strip stated a proportion honestly but did not look like a
+   reading. Same numbers, drawn as a row of columns against a baseline.
+   =========================================================================== */
+
+@keyframes bos-bar-rise { from { transform: scaleY(0.05); opacity: 0; } }
+
+/* An empty instrument still occupies its slot, so a card with no data yet is
+   the same height as one with data and the row does not go ragged. It says
+   what it is rather than drawing a flat line that looks like a real zero. */
+
+@media (prefers-reduced-motion: reduce) {
+  .bos-row:hover .bos-plate { transform: none !important; }
+}
+
+/* A bar instrument sitting on the card's floor, matching the sparkline's
+   treatment: full bleed, no gutter, columns rooted on the card's bottom edge.
+   Two of the five pulse cards were reading as "a caption with a hairline"
+   beside three that read as charts; this makes the row one instrument family. */
+
+
+/* ===========================================================================
+   Motion — the spec asks for charts that animate on load and transitions that
+   are smooth rather than abrupt, in the 200–300ms band.
+   =========================================================================== */
+
+/* A line that draws itself. The dash array is set to a length longer than any
+   path this chart produces, so one rule covers a sparkline and a full-width
+   forecast without measuring either. */
+
+@keyframes bos-draw-in { to { stroke-dashoffset: 0; } }
+
+/* Everything that responds to a pointer does so on the same clock. */
+.bos-btn,
+.bos-row,
+.bos-plate,
+.bos-panel,
+.bos-nav-row {
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===========================================================================
+   LIGHT SOURCES
+   ---------------------------------------------------------------------------
+   The pieces below exist so that light can be placed deliberately: behind an
+   element, around a control, along a line. Everything is additive over the dark
+   ground, and every value is restrained — the design reads premium because most
+   of the surface stays dark and only what matters emits.
+   =========================================================================== */
+
+/* An ambient pool of coloured light cast BEHIND an element and spilling onto
+   whatever it sits on. Put it on the hero panel and the AI genuinely appears to
+   be illuminating the dashboard around it. */
+
+/* ---------------------------------------------------------------------------
+   Buttons as illuminated controls.
+   --------------------------------------------------------------------------- */
+
+/* Four layers, which is what separates a lit control from a coloured
+   rectangle: the saturated gradient body, a bright internal highlight along the
+   top edge, a darker floor so the body has volume, and an outer bloom that
+   spills onto the surface underneath. */
+.bos-btn--primary {
+  position: relative;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0) 45%),
+    linear-gradient(96deg, #2563eb 0%, #6d28d9 52%, #7c3aed 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -8px 18px -10px rgba(0, 0, 0, 0.7) inset,
+    0 0 22px rgba(99, 102, 241, 0.55),
+    0 0 48px -10px rgba(124, 58, 237, 0.65);
+  transition: box-shadow 0.25s ease, filter 0.25s ease, transform 0.18s ease;
+}
+
+.bos-btn--primary:hover {
+  color: #fff;
+  filter: brightness(1.12) saturate(1.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -8px 18px -10px rgba(0, 0, 0, 0.7) inset,
+    0 0 30px rgba(99, 102, 241, 0.8),
+    0 0 70px -8px rgba(124, 58, 237, 0.9);
+}
+
+/* Secondary controls stay dark and pick up illumination only on approach. */
+.dark .bos-btn:not(.bos-btn--primary):hover {
+  border-color: color-mix(in srgb, var(--embmis-blue) 55%, transparent);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.12),
+    0 0 22px -8px rgba(59, 130, 246, 0.75);
+}
+
+.dark .bos-btn--ghost:hover {
+  border-color: color-mix(in srgb, var(--embmis-violet) 60%, transparent);
+  box-shadow: 0 0 20px -8px rgba(139, 92, 246, 0.8);
+}
+
+/* ---------------------------------------------------------------------------
+   Active navigation reads as a lit filament, not a highlighted row.
+   --------------------------------------------------------------------------- */
+
+/* The live dot is a point source. */
+
+/* Distribution strips and meters are lit filaments too. */
+
+/* The two strongest sources on the surface get a wider, softer pool than the
+   generic .bos-emit — they are meant to light the canvas around them, not just
+   themselves. Values stay low: the spill should be felt before it is noticed. */
+
+/* The symbiote's stage. The object generates its own light in canvas; this is
+   the light landing on the panel behind it, which is what stops it reading as
+   a 3D ornament pasted on top of a card. */
+
+/* ---------------------------------------------------------------------------
+   Depth. Six levels, and the ladder has to be visible or none of the light
+   reads: near-black ground, navy chrome, glass cards, saturated elements,
+   luminous marks, and the AI brightest of all.
+   --------------------------------------------------------------------------- */
+
+/* Chrome sits between the ground and the cards — darker than a panel so the
+   canvas reads as the lit work area and the frame recedes. */
+
+/* The sunken surfaces inside a card go DOWN, away from the light, so the lit
+   things on top of them have somewhere to stand out from. */
+.dark .bos-panel--sunken {
+  background: rgba(3, 7, 18, 0.55);
+  border-color: rgba(99, 132, 214, 0.10);
+}
+
+/* A flagged row is lit along its leading edge by whatever flagged it. */
+.dark .bos-row--flagged {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bos-accent, var(--embmis-blue)) 12%, transparent),
+    transparent 60%);
+  border-left-color: var(--bos-accent);
+  box-shadow: inset 2px 0 12px -6px var(--bos-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   The schedule rail.
+
+   Three columns: a name, the calendar, and the figure. The calendar column is
+   the only one that flexes — the name is clamped and the figure is its own
+   width, so bars in different rows always start and end at the same x and are
+   comparable by eye, which is the entire reason a Gantt exists.
+
+   minmax(0, 1fr) on the track rather than 1fr: a long project name has a
+   min-content width larger than its share, and a bare 1fr would let it steal
+   width from the calendar — different rows would then measure against
+   different scales.
+   --------------------------------------------------------------------------- */
+
+/* Today is drawn once across every row rather than per row, on an overlay that
+   repeats the row grid so its position is a percentage of the calendar column
+   and not of the whole row. */
+
+/* The bar is the scheduled span; the fill inside it is how much of the work is
+   done. Two different quantities, so they are two different marks — a bar that
+   is only as long as its progress would say the schedule shrank. */
+
+/* ---------------------------------------------------------------------------
+   The day grid. Seven columns, one cell per day, weekends marked.
+   --------------------------------------------------------------------------- */
+
+/* Recorded-nothing, not missing: a hole in the grid and an unrecorded day read
+   identically, and only one of them is worth noticing. */
+
+/* ---------------------------------------------------------------------------
+   The radar. The SVG scales with the container; labels are positioned over it
+   in percentages of the shape's own 0-100 space, so they track the polygon at
+   any width without being SVG text (which would not inherit the type scale).
+
+   The viewBox is padded by 16 units on each side of a 100-unit shape, so the
+   wrapper carries the same padding as a fraction: 16/132 ≈ 12.1%.
+   --------------------------------------------------------------------------- */
+/* The figure and its scale caption are siblings, so the caption sits below the
+   square rather than inside it — absolutely positioned at the bottom it landed
+   on whichever axis label happens to point straight down. */
+
+/* ---------------------------------------------------------------------------
+   Text input, and a chip that is a button.
+
+   The chip already exists as a label; this is the same object with the affordances
+   a button needs — a pointer, a hover state, and a focus ring. It is a separate
+   class rather than a bare :hover on .bos-chip because most chips are not
+   interactive, and giving a static label a hover state is a promise the page
+   does not keep.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   The workforce hero.
+
+   A WebGL canvas behind a text layer. The canvas is absolutely positioned and
+   the copy sits above it in normal flow, so the band's height comes from the
+   copy — a canvas sized by its own aspect ratio would either crop the text on a
+   narrow screen or leave a hole on a wide one.
+   --------------------------------------------------------------------------- */
+
+/* The copy has to stay readable over whatever the field is doing behind it, so
+   it carries its own scrim rather than relying on the scene staying dark on the
+   left — which it does not, because the structure turns. */
+
+/* Light mode does not run the scene at all — a neon constellation on white is
+   a grey smudge — so the band is just a panel there. */
+
+/* ===========================================================================
+   Calm layer.
+
+   Everything above was written for a cinematic navy environment: glows behind
+   panels, light washes inside them, gradient buttons with coloured halos,
+   tiles that rise on hover. None of it carried information, and all of it
+   competed with the numbers. This layer is the last word on those effects so
+   the rules above can be retired file by file without a visual jump.
+   =========================================================================== */
+.bos-panel::before,
+.bos-panel::after,
+.dark .bos-panel::after { content: none !important; display: none !important; }
+
+[class*='bos-'] { text-shadow: none !important; }
+.bos-panel,
+.bos-panel--raised,
+.bos-panel--sunken,
+.bos-panel--interactive,
+.bos-row,
+.bos-plate,
+.bos-chip,
+.bos-btn { box-shadow: none !important; filter: none !important; }
+
+.bos-panel, .dark .bos-panel { border-radius: var(--radius-lg); border-color: var(--line); background: var(--bg-surface) !important; background-image: none !important; }
+.bos-panel.bos-panel--sunken { background: var(--bg-sunken) !important; }
+.bos-panel--sunken { background: var(--bg-sunken); }
+.bos-panel--interactive:hover,
+.dark .bos-panel:hover { border-color: var(--line-strong); transform: none; }
+.bos-row--flagged:hover { transform: none; }
+
+.bos-plate { border-radius: var(--radius); border-color: transparent; }
+.bos-chip { border-radius: var(--radius-sm); font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.02em; }
+
+.bos-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 550;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  color: var(--fg);
+  transform: none !important;
+}
+.bos-btn:hover { background: var(--bg-hover); border-color: var(--line-strong); color: var(--fg); }
+.bos-btn--sm { height: 28px; padding: 0 10px; font-size: 12.5px; }
+.bos-btn--primary,
+.bos-btn--primary:hover,
+.bos-btn--primary[aria-disabled='true']:hover {
+  background: var(--brand) !important;
+  background-image: none !important;
+  color: var(--on-brand) !important;
+  border: 1px solid transparent !important;
+}
+.bos-btn--primary:hover { background: var(--brand-hover) !important; }
+.bos-btn--primary::before,
+.bos-btn--primary::after { content: none !important; }
+.bos-btn--ghost { background: transparent; border-color: transparent; }
+.bos-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.bos-link { color: var(--brand-fg); }
+.bos-link:hover { color: var(--brand-hover); text-decoration: underline; text-underline-offset: 3px; }
+
+.bos-eyebrow,
+.bos-metric-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--fg-faint);
+}
+.bos-metric--lg { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--fg); }
+.bos-caption { color: var(--fg-faint); }
+
+/* The 3D figures were decoration on every module overview. They stay
+   mounted for now (their containers size the layout) but draw nothing. */
+
+@media (prefers-reduced-motion: reduce) {
+  [class*='bos-'] { animation: none !important; transition: none !important; }
+}
+
+/* Page titles in older containers match PageHeader: 20/24px, semibold, tight. */
+.bos-title {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  color: var(--fg);
+}
+@media (min-width: 640px) { .bos-title { font-size: 1.5rem; } }
+
+/* Decorative category hues carry no meaning: blue, cyan, violet and magenta
+   become ink. Green, amber and rose stay because they map to ok/warn/risk. */
+.bos-accent-blue, .bos-accent-cyan, .bos-accent-violet, .bos-accent-magenta {
+  --bos-accent: var(--fg-muted);
+  --bos-tint: var(--bg-sunken);
+}
+.bos-accent-green { --bos-accent: var(--ok-fg); --bos-tint: var(--ok-soft); }
+.bos-accent-amber { --bos-accent: var(--warn-fg); --bos-tint: var(--warn-soft); }
+.bos-accent-rose  { --bos-accent: var(--risk-fg); --bos-tint: var(--risk-soft); }
+.bos-chip:not([class*='bos-accent-']), .bos-plate:not([class*='bos-accent-']) { --bos-accent: var(--fg-muted); --bos-tint: var(--bg-sunken); }
+
+/* Older .bos-field controls look exactly like the system's Input. */
+.bos-field, input.bos-field, select.bos-field, textarea.bos-field {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius) !important;
+  color: var(--fg) !important;
+  height: auto;
+  min-height: 2rem;
+  font-size: 0.8125rem;
+  box-shadow: none;
+}
+.bos-field:hover { border-color: rgb(var(--c-ink-400)) !important; }
+.bos-field:focus-within, .bos-field:focus {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgb(var(--c-brand-500) / 0.18) !important;
+  background: var(--bg-surface) !important;
+}

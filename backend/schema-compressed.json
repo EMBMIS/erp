@@ -1,0 +1,2941 @@
+{
+  "tables": {
+    "auto_purchase_orders": {
+      "columns": [
+        "id:uuid",
+        "sales_order_id:uuid*",
+        "delivery_schedule_id:uuid?",
+        "purchase_order_id:uuid*",
+        "supplier_id:uuid*",
+        "created_reason:character varying*",
+        "total_amount:numeric?",
+        "currency:character varying?",
+        "created_by:uuid*",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_order_id",
+        "purchase_order_id",
+        "supplier_id",
+        "created_reason",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "delivery_schedule_id",
+          "references_table": "delivery_schedules",
+          "references_column": "id"
+        },
+        {
+          "column": "purchase_order_id",
+          "references_table": "purchase_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "bins": {
+      "columns": [
+        "id:uuid",
+        "code:character varying*",
+        "description:character varying*",
+        "max_volume_capacity:numeric*",
+        "storage_location_id:uuid?",
+        "is_active:boolean?",
+        "user_id:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "status:character varying?",
+        "decline_reason:text?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "declined_by:uuid?",
+        "declined_at:timestamp with time zone?",
+        "max_mass_capacity:numeric",
+        "current_mass_used:numeric",
+        "current_volume_used:numeric"
+      ],
+      "required_fields": [
+        "code",
+        "description",
+        "max_volume_capacity"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "declined_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "storage_location_id",
+          "references_table": "storage_locations",
+          "references_column": "id"
+        },
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "chart_of_accounts": {
+      "columns": [
+        "id:uuid",
+        "account_code:character varying*",
+        "account_name:character varying*",
+        "account_type:character varying*",
+        "account_subtype:character varying?",
+        "parent_account_id:uuid?",
+        "account_level:integer",
+        "is_header:boolean?",
+        "is_active:boolean?",
+        "normal_balance:character varying*",
+        "current_balance:numeric?",
+        "beginning_balance:numeric?",
+        "allow_manual_posting:boolean?",
+        "require_department:boolean?",
+        "require_project:boolean?",
+        "require_cost_center:boolean?",
+        "balance_sheet_section:character varying?",
+        "income_statement_section:character varying?",
+        "cash_flow_section:character varying?",
+        "description:text?",
+        "tax_code:character varying?",
+        "currency:character varying?",
+        "bank_name:character varying?",
+        "bank_account_number:character varying?",
+        "bank_routing_number:character varying?",
+        "status:character varying",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "account_code",
+        "account_name",
+        "account_type",
+        "normal_balance",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "parent_account_id",
+          "references_table": "chart_of_accounts",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "chart_of_accounts_status_history": {
+      "columns": [
+        "id:uuid",
+        "account_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "status_date:timestamp with time zone?",
+        "changed_by:uuid?",
+        "reason:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "account_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "account_id",
+          "references_table": "chart_of_accounts",
+          "references_column": "id"
+        },
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "chat_memory": {
+      "columns": [
+        "id:uuid",
+        "user_id:uuid*",
+        "user_message:text*",
+        "ai_response:text*",
+        "response_type:character varying",
+        "created_at:timestamp without time zone?",
+        "updated_at:timestamp without time zone?",
+        "deleted_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "user_id",
+        "user_message",
+        "ai_response"
+      ],
+      "foreign_keys": []
+    },
+    "contract_items": {
+      "columns": [
+        "id:uuid",
+        "contract_id:uuid?",
+        "item_id:uuid?",
+        "unit_price:numeric?",
+        "currency:character varying?",
+        "lead_time_days:integer?",
+        "moq:numeric?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [],
+      "foreign_keys": [
+        {
+          "column": "contract_id",
+          "references_table": "contracts",
+          "references_column": "id"
+        },
+        {
+          "column": "item_id",
+          "references_table": "items",
+          "references_column": "id"
+        }
+      ]
+    },
+    "contracts": {
+      "columns": [
+        "id:uuid",
+        "contract_number:character varying*",
+        "contract_name:character varying*",
+        "supplier_id:uuid?",
+        "contract_type:character varying?",
+        "start_date:date?",
+        "end_date:date?",
+        "payment_terms:character varying?",
+        "incoterms:character varying?",
+        "currency:character varying?",
+        "attachment_url:text?",
+        "status:character varying?",
+        "supplier_instructions:text?",
+        "created_by:uuid?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "digital_contract_required:boolean?",
+        "contract_file_path:character varying?",
+        "contract_file_name:character varying?",
+        "contract_file_size:integer?",
+        "contract_file_type:character varying?",
+        "uploaded_at:timestamp without time zone?",
+        "uploaded_by:uuid?",
+        "title:character varying?",
+        "contract_value:numeric?",
+        "description:text?",
+        "terms:text?",
+        "document_url:text?",
+        "sent_to_supplier_at:timestamp with time zone?",
+        "supplier_response_due:timestamp with time zone?",
+        "supplier_accepted_at:timestamp with time zone?",
+        "supplier_declined_at:timestamp with time zone?",
+        "supplier_response_token:character varying?",
+        "procurement_validation_notes:text?",
+        "signed_at:timestamp with time zone?",
+        "signed_by:uuid?",
+        "final_approved_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "contract_number",
+        "contract_name"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "signed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "uploaded_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_audit_log": {
+      "columns": [
+        "id:uuid",
+        "customer_id:uuid*",
+        "action:character varying*",
+        "field_changed:character varying?",
+        "old_value:text?",
+        "new_value:text?",
+        "changed_by:uuid*",
+        "changed_at:timestamp with time zone?",
+        "notes:text?"
+      ],
+      "required_fields": [
+        "customer_id",
+        "action",
+        "changed_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_invoice_items": {
+      "columns": [
+        "id:uuid",
+        "invoice_id:uuid*",
+        "line_number:integer*",
+        "item_description:text*",
+        "quantity:numeric*",
+        "unit_of_measure:character varying?",
+        "unit_price:numeric*",
+        "discount_percentage:numeric?",
+        "discount_amount:numeric?",
+        "line_total:numeric*",
+        "tax_code:character varying?",
+        "tax_rate:numeric?",
+        "tax_amount:numeric?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "invoice_id",
+        "line_number",
+        "item_description",
+        "quantity",
+        "unit_price",
+        "line_total"
+      ],
+      "foreign_keys": [
+        {
+          "column": "invoice_id",
+          "references_table": "customer_invoices",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_invoice_status_history": {
+      "columns": [
+        "id:uuid",
+        "invoice_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "changed_by:uuid?",
+        "status_date:timestamp with time zone?",
+        "reason:text?"
+      ],
+      "required_fields": [
+        "invoice_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "invoice_id",
+          "references_table": "customer_invoices",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_invoices": {
+      "columns": [
+        "id:uuid",
+        "invoice_number:character varying*",
+        "customer_id:uuid*",
+        "sales_order_id:uuid?",
+        "journal_entry_id:uuid?",
+        "invoice_date:date",
+        "due_date:date*",
+        "payment_terms:character varying?",
+        "currency:character varying?",
+        "subtotal:numeric",
+        "tax_amount:numeric",
+        "discount_amount:numeric",
+        "total_amount:numeric",
+        "paid_amount:numeric",
+        "outstanding_amount:numeric?",
+        "status:character varying",
+        "description:text?",
+        "notes:text?",
+        "internal_notes:text?",
+        "created_by:uuid*",
+        "created_at:timestamp with time zone?",
+        "updated_by:uuid?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "deleted_by:uuid?"
+      ],
+      "required_fields": [
+        "invoice_number",
+        "customer_id",
+        "due_date",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "deleted_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "journal_entry_id",
+          "references_table": "journal_entries",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_payment_allocations": {
+      "columns": [
+        "id:uuid",
+        "payment_id:uuid*",
+        "invoice_id:uuid*",
+        "allocation_amount:numeric*",
+        "allocation_date:date",
+        "created_by:uuid*",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "payment_id",
+        "invoice_id",
+        "allocation_amount",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "invoice_id",
+          "references_table": "customer_invoices",
+          "references_column": "id"
+        },
+        {
+          "column": "payment_id",
+          "references_table": "customer_payments",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_payment_status_history": {
+      "columns": [
+        "id:uuid",
+        "payment_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "changed_by:uuid?",
+        "status_date:timestamp with time zone?",
+        "reason:text?"
+      ],
+      "required_fields": [
+        "payment_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "payment_id",
+          "references_table": "customer_payments",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customer_payments": {
+      "columns": [
+        "id:uuid",
+        "payment_number:character varying*",
+        "customer_id:uuid*",
+        "journal_entry_id:uuid?",
+        "payment_date:date",
+        "payment_method:character varying*",
+        "reference_number:character varying?",
+        "bank_account_id:uuid?",
+        "payment_amount:numeric*",
+        "currency:character varying?",
+        "exchange_rate:numeric?",
+        "status:character varying",
+        "description:text?",
+        "notes:text?",
+        "created_by:uuid*",
+        "created_at:timestamp with time zone?",
+        "updated_by:uuid?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "deleted_by:uuid?"
+      ],
+      "required_fields": [
+        "payment_number",
+        "customer_id",
+        "payment_method",
+        "payment_amount",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "deleted_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "journal_entry_id",
+          "references_table": "journal_entries",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "customers": {
+      "columns": [
+        "id:uuid",
+        "customer_code:character varying*",
+        "customer_name:character varying*",
+        "legal_entity_name:character varying?",
+        "customer_type:character varying?",
+        "primary_email:character varying?",
+        "secondary_email:character varying?",
+        "phone:character varying?",
+        "mobile:character varying?",
+        "fax:character varying?",
+        "website:character varying?",
+        "billing_address_line1:character varying?",
+        "billing_address_line2:character varying?",
+        "billing_city:character varying?",
+        "billing_state:character varying?",
+        "billing_country:character varying?",
+        "billing_postal_code:character varying?",
+        "shipping_address_line1:character varying?",
+        "shipping_address_line2:character varying?",
+        "shipping_city:character varying?",
+        "shipping_state:character varying?",
+        "shipping_country:character varying?",
+        "shipping_postal_code:character varying?",
+        "use_billing_as_shipping:boolean?",
+        "currency:character varying?",
+        "credit_limit:numeric?",
+        "current_balance:numeric?",
+        "credit_days:integer?",
+        "payment_terms:character varying?",
+        "tax_number:character varying?",
+        "vat_number:character varying?",
+        "tax_exempt:boolean?",
+        "tax_rate:numeric?",
+        "primary_contact_name:character varying?",
+        "primary_contact_title:character varying?",
+        "primary_contact_email:character varying?",
+        "primary_contact_phone:character varying?",
+        "secondary_contact_name:character varying?",
+        "secondary_contact_title:character varying?",
+        "secondary_contact_email:character varying?",
+        "secondary_contact_phone:character varying?",
+        "status:character varying?",
+        "customer_category:character varying?",
+        "customer_group:character varying?",
+        "sales_rep_id:uuid?",
+        "credit_risk_level:character varying?",
+        "credit_check_required:boolean?",
+        "notes:text?",
+        "internal_notes:text?",
+        "created_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_by:uuid?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "deleted_by:uuid?",
+        "email:character varying?"
+      ],
+      "required_fields": [
+        "customer_code",
+        "customer_name"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "deleted_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_rep_id",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delegation_of_authority": {
+      "columns": [
+        "id:uuid",
+        "cost_center:character varying?",
+        "user_id:uuid?",
+        "min_amount:numeric?",
+        "max_amount:numeric?",
+        "currency:character varying?",
+        "applies_to:character varying?",
+        "is_active:boolean?",
+        "effective_from:date?",
+        "effective_until:date?",
+        "created_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delivery_exceptions": {
+      "columns": [
+        "id:uuid",
+        "delivery_schedule_id:uuid*",
+        "exception_type:character varying*",
+        "exception_date:timestamp with time zone?",
+        "description:text*",
+        "resolution:text?",
+        "delay_minutes:integer?",
+        "additional_cost:numeric?",
+        "status:character varying",
+        "resolved_at:timestamp with time zone?",
+        "resolved_by:uuid?",
+        "photos:ARRAY?",
+        "documents:ARRAY?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "delivery_schedule_id",
+        "exception_type",
+        "description",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "delivery_schedule_id",
+          "references_table": "delivery_schedules",
+          "references_column": "id"
+        },
+        {
+          "column": "resolved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delivery_items": {
+      "columns": [
+        "id:uuid",
+        "delivery_schedule_id:uuid*",
+        "sales_order_item_id:uuid?",
+        "item_code:character varying?",
+        "item_name:character varying*",
+        "item_description:text?",
+        "ordered_quantity:numeric*",
+        "delivered_quantity:numeric?",
+        "remaining_quantity:numeric*",
+        "unit_of_measure:character varying*",
+        "package_type:character varying?",
+        "package_count:integer?",
+        "weight_kg:numeric?",
+        "dimensions_cm:character varying?",
+        "status:character varying",
+        "notes:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "fulfillment_method:character varying?",
+        "supplier_id:uuid?",
+        "purchase_order_item_id:uuid?",
+        "inventory_reserved_quantity:numeric?",
+        "dropship_quantity:numeric?"
+      ],
+      "required_fields": [
+        "delivery_schedule_id",
+        "item_name",
+        "ordered_quantity",
+        "remaining_quantity",
+        "unit_of_measure"
+      ],
+      "foreign_keys": [
+        {
+          "column": "delivery_schedule_id",
+          "references_table": "delivery_schedules",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delivery_route_stops": {
+      "columns": [
+        "id:uuid",
+        "delivery_route_id:uuid*",
+        "delivery_schedule_id:uuid*",
+        "stop_order:integer*",
+        "estimated_arrival_time:timestamp with time zone?",
+        "actual_arrival_time:timestamp with time zone?",
+        "estimated_departure_time:timestamp with time zone?",
+        "actual_departure_time:timestamp with time zone?",
+        "status:character varying",
+        "notes:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "delivery_route_id",
+        "delivery_schedule_id",
+        "stop_order"
+      ],
+      "foreign_keys": [
+        {
+          "column": "delivery_route_id",
+          "references_table": "delivery_routes",
+          "references_column": "id"
+        },
+        {
+          "column": "delivery_schedule_id",
+          "references_table": "delivery_schedules",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delivery_routes": {
+      "columns": [
+        "id:uuid",
+        "route_number:character varying*",
+        "route_name:character varying?",
+        "route_date:date*",
+        "start_location:text?",
+        "end_location:text?",
+        "estimated_distance_km:numeric?",
+        "estimated_duration_minutes:integer?",
+        "driver_name:character varying?",
+        "driver_phone:character varying?",
+        "vehicle_number:character varying?",
+        "vehicle_type:character varying?",
+        "status:character varying",
+        "started_at:timestamp with time zone?",
+        "completed_at:timestamp with time zone?",
+        "notes:text?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "route_number",
+        "route_date",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delivery_schedules": {
+      "columns": [
+        "id:uuid",
+        "schedule_number:character varying*",
+        "sales_order_id:uuid*",
+        "sales_order_number:character varying*",
+        "customer_id:uuid*",
+        "customer_name:character varying*",
+        "delivery_date:date*",
+        "delivery_time_from:time without time zone?",
+        "delivery_time_to:time without time zone?",
+        "delivery_address:text*",
+        "delivery_instructions:text?",
+        "shipping_method:character varying?",
+        "contact_person:character varying?",
+        "contact_phone:character varying?",
+        "contact_email:character varying?",
+        "status:character varying",
+        "priority:character varying?",
+        "driver_name:character varying?",
+        "vehicle_number:character varying?",
+        "tracking_number:character varying?",
+        "estimated_delivery_time:timestamp with time zone?",
+        "actual_delivery_time:timestamp with time zone?",
+        "delivered_by:character varying?",
+        "received_by:character varying?",
+        "delivery_signature:text?",
+        "delivery_photo:text?",
+        "notes:text?",
+        "internal_notes:text?",
+        "special_instructions:text?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "fulfillment_type:character varying?",
+        "supplier_id:uuid?",
+        "auto_purchase_order_id:uuid?",
+        "dropship_notes:text?",
+        "estimated_supplier_delivery_date:date?",
+        "supplier_tracking_number:character varying?",
+        "workflow_status:character varying?",
+        "original_delivery_date:date?",
+        "postponement_count:integer?",
+        "postponement_reason:text?",
+        "postponed_by:uuid?",
+        "postponed_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "schedule_number",
+        "sales_order_id",
+        "sales_order_number",
+        "customer_id",
+        "customer_name",
+        "delivery_date",
+        "delivery_address",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "auto_purchase_order_id",
+          "references_table": "purchase_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "postponed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "delivery_status_history": {
+      "columns": [
+        "id:uuid",
+        "delivery_schedule_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "status_date:timestamp with time zone?",
+        "location:character varying?",
+        "latitude:numeric?",
+        "longitude:numeric?",
+        "changed_by:uuid*",
+        "reason:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "delivery_schedule_id",
+        "to_status",
+        "changed_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "delivery_schedule_id",
+          "references_table": "delivery_schedules",
+          "references_column": "id"
+        }
+      ]
+    },
+    "goods_receipts": {
+      "columns": [
+        "id:uuid",
+        "po_id:uuid?",
+        "po_line_item_id:uuid?",
+        "quantity_received:numeric*",
+        "condition_grade:character varying?",
+        "batch_lot_number:character varying?",
+        "serial_numbers:jsonb?",
+        "expiry_date:date?",
+        "received_date:timestamp with time zone?",
+        "storage_location_id:uuid?",
+        "bin_id:uuid?",
+        "notes:text?",
+        "received_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "quantity_received"
+      ],
+      "foreign_keys": [
+        {
+          "column": "bin_id",
+          "references_table": "bins",
+          "references_column": "id"
+        },
+        {
+          "column": "po_id",
+          "references_table": "purchase_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "po_line_item_id",
+          "references_table": "purchase_order_line_items",
+          "references_column": "id"
+        },
+        {
+          "column": "received_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "storage_location_id",
+          "references_table": "storage_locations",
+          "references_column": "id"
+        }
+      ]
+    },
+    "inventory_items": {
+      "columns": [
+        "id:uuid",
+        "item_master_id:uuid*",
+        "current_stock_quantity:numeric",
+        "minimum_stock_level:numeric?",
+        "maximum_stock_level:numeric?",
+        "reorder_point:numeric?",
+        "unit_price:numeric?",
+        "currency:character varying?",
+        "user_id:uuid*",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "status:character varying",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "decline_reason:text?",
+        "condition_grade:character varying?",
+        "condition_notes:text?"
+      ],
+      "required_fields": [
+        "item_master_id",
+        "user_id"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "item_master_id",
+          "references_table": "items",
+          "references_column": "id"
+        },
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "inventory_storage_mappings": {
+      "columns": [
+        "id:uuid",
+        "inventory_item_id:uuid*",
+        "storage_location_id:uuid*",
+        "bin_id:uuid?",
+        "quantity_in_location:numeric",
+        "user_id:uuid*",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "status:character varying?"
+      ],
+      "required_fields": [
+        "inventory_item_id",
+        "storage_location_id",
+        "user_id"
+      ],
+      "foreign_keys": [
+        {
+          "column": "bin_id",
+          "references_table": "bins",
+          "references_column": "id"
+        },
+        {
+          "column": "inventory_item_id",
+          "references_table": "inventory_items",
+          "references_column": "id"
+        },
+        {
+          "column": "storage_location_id",
+          "references_table": "storage_locations",
+          "references_column": "id"
+        },
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "items": {
+      "columns": [
+        "id:uuid",
+        "item_code:character varying*",
+        "name:character varying*",
+        "description:text?",
+        "stock_code:character varying*",
+        "status:character varying",
+        "criticality:character varying",
+        "unit_of_measure:character varying",
+        "unspsc_code:character varying?",
+        "manufacturer:character varying?",
+        "manufacturer_part_number:character varying?",
+        "item_category:character varying?",
+        "serial_number:character varying?",
+        "equipment_tag:character varying?",
+        "has_contract:boolean?",
+        "contract_number:character varying?",
+        "has_barcode:boolean?",
+        "barcode:character varying?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "is_stock_item:boolean",
+        "planned_stock:boolean",
+        "decline_reason:text?",
+        "approved_item_code:character varying?",
+        "user_id:uuid?",
+        "volume:numeric?",
+        "mass:numeric?",
+        "mass_per_uom:numeric?",
+        "volume_per_uom:numeric?",
+        "sku:character varying?",
+        "category:character varying?"
+      ],
+      "required_fields": [
+        "item_code",
+        "name",
+        "stock_code"
+      ],
+      "foreign_keys": [
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "journal_entries": {
+      "columns": [
+        "id:uuid",
+        "journal_number:character varying*",
+        "entry_date:date*",
+        "posting_date:date*",
+        "period_year:integer*",
+        "period_month:integer*",
+        "source_type:character varying*",
+        "source_id:uuid?",
+        "source_document:character varying?",
+        "description:text*",
+        "reference:character varying?",
+        "total_debit:numeric",
+        "total_credit:numeric",
+        "status:character varying",
+        "requires_approval:boolean?",
+        "is_reversing_entry:boolean?",
+        "original_entry_id:uuid?",
+        "currency:character varying?",
+        "exchange_rate:numeric?",
+        "batch_id:character varying?",
+        "external_reference:character varying?",
+        "notes:text?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "approved_by:uuid?",
+        "posted_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "posted_at:timestamp with time zone?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "journal_number",
+        "entry_date",
+        "posting_date",
+        "period_year",
+        "period_month",
+        "source_type",
+        "description",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "original_entry_id",
+          "references_table": "journal_entries",
+          "references_column": "id"
+        },
+        {
+          "column": "posted_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "journal_entry_items": {
+      "columns": [
+        "id:uuid",
+        "journal_entry_id:uuid*",
+        "line_number:integer*",
+        "account_id:uuid*",
+        "account_code:character varying*",
+        "account_name:character varying*",
+        "debit_amount:numeric?",
+        "credit_amount:numeric?",
+        "department_id:uuid?",
+        "project_id:uuid?",
+        "cost_center_id:uuid?",
+        "description:text?",
+        "reference:character varying?",
+        "currency:character varying?",
+        "exchange_rate:numeric?",
+        "original_amount:numeric?",
+        "original_currency:character varying?",
+        "allocation_percentage:numeric?",
+        "allocation_basis:character varying?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "journal_entry_id",
+        "line_number",
+        "account_id",
+        "account_code",
+        "account_name"
+      ],
+      "foreign_keys": [
+        {
+          "column": "account_id",
+          "references_table": "chart_of_accounts",
+          "references_column": "id"
+        },
+        {
+          "column": "journal_entry_id",
+          "references_table": "journal_entries",
+          "references_column": "id"
+        }
+      ]
+    },
+    "journal_entry_status_history": {
+      "columns": [
+        "id:uuid",
+        "journal_entry_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "status_date:timestamp with time zone?",
+        "changed_by:uuid?",
+        "reason:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "journal_entry_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "journal_entry_id",
+          "references_table": "journal_entries",
+          "references_column": "id"
+        }
+      ]
+    },
+    "notifications": {
+      "columns": [
+        "id:uuid",
+        "type:character varying*",
+        "title:character varying*",
+        "message:text*",
+        "data:jsonb?",
+        "is_read:boolean?",
+        "created_at:timestamp with time zone?",
+        "read_at:timestamp with time zone?",
+        "user_id:uuid?"
+      ],
+      "required_fields": [
+        "type",
+        "title",
+        "message"
+      ],
+      "foreign_keys": [
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "purchase_order_line_items": {
+      "columns": [
+        "id:uuid",
+        "po_id:uuid?",
+        "item_id:uuid?",
+        "item_description:text*",
+        "unit_of_measure:character varying?",
+        "quantity:numeric*",
+        "unit_price:numeric*",
+        "line_total:numeric?",
+        "requested_delivery_date:date?",
+        "quantity_received:numeric?",
+        "quantity_remaining:numeric?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "item_description",
+        "quantity",
+        "unit_price"
+      ],
+      "foreign_keys": [
+        {
+          "column": "item_id",
+          "references_table": "items",
+          "references_column": "id"
+        },
+        {
+          "column": "po_id",
+          "references_table": "purchase_orders",
+          "references_column": "id"
+        }
+      ]
+    },
+    "purchase_orders": {
+      "columns": [
+        "id:uuid",
+        "po_number:character varying*",
+        "purchase_requisition_id:uuid?",
+        "rfq_id:uuid?",
+        "contract_id:uuid?",
+        "supplier_id:uuid*",
+        "po_date:date?",
+        "delivery_date:date?",
+        "payment_terms:character varying?",
+        "incoterms:character varying?",
+        "currency:character varying?",
+        "subtotal:numeric?",
+        "tax_amount:numeric?",
+        "total_amount:numeric?",
+        "status:character varying?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "created_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "supplier_confirmed_at:timestamp with time zone?",
+        "supplier_rejected_at:timestamp with time zone?",
+        "rejection_reason:text?",
+        "supplier_delivery_token:character varying?",
+        "supplier_delivery_due:timestamp without time zone?",
+        "delivery_confirmed_at:timestamp without time zone?",
+        "delivery_confirmed_by:uuid?",
+        "delivery_notes:text?",
+        "verification_notes:text?",
+        "verified_at:timestamp without time zone?",
+        "verified_by:uuid?",
+        "delivery_address:text?",
+        "storage_location_id:uuid?",
+        "source_type:character varying?",
+        "sales_order_id:uuid?",
+        "sales_rfq_id:integer?",
+        "customer_confirmation_notes:text?",
+        "handover_notes:text?",
+        "handover_at:timestamp with time zone?",
+        "handover_by:uuid?"
+      ],
+      "required_fields": [
+        "po_number",
+        "supplier_id"
+      ],
+      "foreign_keys": [
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_rfq_id",
+          "references_table": "sales_rfqs",
+          "references_column": "id"
+        },
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "contract_id",
+          "references_table": "contracts",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "delivery_confirmed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "handover_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "purchase_requisition_id",
+          "references_table": "purchase_requisitions",
+          "references_column": "id"
+        },
+        {
+          "column": "rfq_id",
+          "references_table": "request_for_quotations",
+          "references_column": "id"
+        },
+        {
+          "column": "storage_location_id",
+          "references_table": "storage_locations",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "verified_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "purchase_requisitions": {
+      "columns": [
+        "id:uuid",
+        "pr_number:character varying*",
+        "cost_center:character varying?",
+        "requested_by:uuid?",
+        "item_id:uuid?",
+        "item_description:text?",
+        "unit_of_measure:character varying?",
+        "quantity:numeric*",
+        "estimated_unit_price:numeric?",
+        "currency:character varying?",
+        "recommended_supplier_id:uuid?",
+        "supplier_recommendation_text:text?",
+        "attachments:jsonb?",
+        "status:character varying?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "decline_reason:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "pr_number",
+        "quantity"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "item_id",
+          "references_table": "items",
+          "references_column": "id"
+        },
+        {
+          "column": "recommended_supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "requested_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "request_for_quotations": {
+      "columns": [
+        "id:uuid",
+        "rfq_number:character varying*",
+        "purchase_requisition_id:uuid?",
+        "title:character varying*",
+        "description:text?",
+        "response_deadline:date?",
+        "currency:character varying?",
+        "status:character varying?",
+        "winning_supplier_id:uuid?",
+        "selection_reason:text?",
+        "created_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "rfq_number",
+        "title"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "purchase_requisition_id",
+          "references_table": "purchase_requisitions",
+          "references_column": "id"
+        },
+        {
+          "column": "winning_supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "rfq_line_items": {
+      "columns": [
+        "id:uuid",
+        "rfq_id:uuid?",
+        "item_id:uuid?",
+        "item_description:text*",
+        "unit_of_measure:character varying?",
+        "quantity:numeric*",
+        "specifications:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "item_description",
+        "quantity"
+      ],
+      "foreign_keys": [
+        {
+          "column": "item_id",
+          "references_table": "items",
+          "references_column": "id"
+        },
+        {
+          "column": "rfq_id",
+          "references_table": "request_for_quotations",
+          "references_column": "id"
+        }
+      ]
+    },
+    "rfq_quotations": {
+      "columns": [
+        "id:uuid",
+        "rfq_id:uuid?",
+        "supplier_id:uuid?",
+        "rfq_line_item_id:uuid?",
+        "unit_price:numeric*",
+        "currency:character varying?",
+        "lead_time_days:integer?",
+        "delivery_terms:character varying?",
+        "payment_terms:character varying?",
+        "validity_days:integer?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "unit_price"
+      ],
+      "foreign_keys": [
+        {
+          "column": "rfq_id",
+          "references_table": "request_for_quotations",
+          "references_column": "id"
+        },
+        {
+          "column": "rfq_line_item_id",
+          "references_table": "rfq_line_items",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "rfq_suppliers": {
+      "columns": [
+        "id:uuid",
+        "rfq_id:uuid?",
+        "supplier_id:uuid?",
+        "invited_at:timestamp with time zone?",
+        "response_received_at:timestamp with time zone?",
+        "response_status:character varying?"
+      ],
+      "required_fields": [],
+      "foreign_keys": [
+        {
+          "column": "rfq_id",
+          "references_table": "request_for_quotations",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "rfqs": {
+      "columns": [
+        "id:uuid",
+        "rfq_number:character varying*",
+        "rfq_title:character varying*",
+        "supplier_id:uuid?",
+        "supplier_name:character varying?",
+        "supplier_email:character varying?",
+        "supplier_contact_person:character varying?",
+        "supplier_phone:character varying?",
+        "request_type:character varying?",
+        "required_delivery_date:timestamp without time zone?",
+        "delivery_location:text?",
+        "delivery_terms:character varying?",
+        "payment_terms:character varying?",
+        "status:character varying?",
+        "priority:character varying?",
+        "response_deadline:timestamp without time zone?",
+        "response_received_at:timestamp without time zone?",
+        "supplier_response_method:character varying?",
+        "special_requirements:text?",
+        "terms_and_conditions:text?",
+        "internal_notes:text?",
+        "attachment_urls:jsonb?",
+        "budget_amount:numeric?",
+        "currency:character varying?",
+        "purchase_requisition_id:uuid?",
+        "source_document_type:character varying?",
+        "source_document_id:uuid?",
+        "supplier_total_amount:numeric?",
+        "supplier_currency:character varying?",
+        "supplier_validity_days:integer?",
+        "supplier_comments:text?",
+        "supplier_alternative_items:jsonb?",
+        "approval_status:character varying?",
+        "approved_by:uuid?",
+        "approved_at:timestamp without time zone?",
+        "approval_notes:text?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp without time zone?",
+        "updated_at:timestamp without time zone?",
+        "deleted_at:timestamp without time zone?",
+        "response_token:character varying?",
+        "sent_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "rfq_number",
+        "rfq_title",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "purchase_requisition_id",
+          "references_table": "purchase_requisitions",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_contract_items": {
+      "columns": [
+        "id:uuid",
+        "sales_contract_id:uuid*",
+        "line_number:integer*",
+        "inventory_item_id:uuid?",
+        "item_code:character varying?",
+        "item_name:character varying*",
+        "item_description:text?",
+        "unit_price:numeric*",
+        "currency:character varying",
+        "unit_of_measure:character varying*",
+        "minimum_quantity:numeric?",
+        "maximum_quantity:numeric?",
+        "annual_quantity_limit:numeric?",
+        "volume_discount_tiers:jsonb?",
+        "price_escalation_clause:text?",
+        "price_review_frequency_months:integer?",
+        "lead_time_days:integer?",
+        "delivery_terms:character varying?",
+        "technical_specifications:text?",
+        "quality_requirements:text?",
+        "packaging_requirements:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_contract_id",
+        "line_number",
+        "item_name",
+        "unit_price",
+        "unit_of_measure"
+      ],
+      "foreign_keys": [
+        {
+          "column": "inventory_item_id",
+          "references_table": "inventory_items",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_contract_id",
+          "references_table": "sales_contracts",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_contract_renewals": {
+      "columns": [
+        "id:uuid",
+        "original_contract_id:uuid*",
+        "new_contract_id:uuid?",
+        "renewal_type:character varying*",
+        "renewal_date:date*",
+        "previous_end_date:date*",
+        "new_end_date:date*",
+        "price_adjustment_percentage:numeric?",
+        "terms_changed:boolean?",
+        "changes_description:text?",
+        "created_by:uuid*",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "original_contract_id",
+        "renewal_type",
+        "renewal_date",
+        "previous_end_date",
+        "new_end_date",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "new_contract_id",
+          "references_table": "sales_contracts",
+          "references_column": "id"
+        },
+        {
+          "column": "original_contract_id",
+          "references_table": "sales_contracts",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_contract_status_history": {
+      "columns": [
+        "id:uuid",
+        "sales_contract_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "status_date:timestamp with time zone?",
+        "changed_by:uuid?",
+        "reason:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_contract_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_contract_id",
+          "references_table": "sales_contracts",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_contract_usage": {
+      "columns": [
+        "id:uuid",
+        "sales_contract_id:uuid*",
+        "sales_contract_item_id:uuid*",
+        "reference_type:character varying*",
+        "reference_id:uuid*",
+        "reference_number:character varying?",
+        "quantity_used:numeric*",
+        "unit_price_used:numeric*",
+        "total_value:numeric*",
+        "usage_date:date*",
+        "created_by:uuid*",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_contract_id",
+        "sales_contract_item_id",
+        "reference_type",
+        "reference_id",
+        "quantity_used",
+        "unit_price_used",
+        "total_value",
+        "usage_date",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_contract_id",
+          "references_table": "sales_contracts",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_contract_item_id",
+          "references_table": "sales_contract_items",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_contracts": {
+      "columns": [
+        "id:uuid",
+        "contract_number:character varying*",
+        "contract_name:character varying*",
+        "customer_id:uuid?",
+        "customer_name:character varying?",
+        "supplier_id:uuid?",
+        "supplier_name:character varying?",
+        "contract_type:character varying",
+        "contract_value:numeric?",
+        "currency:character varying",
+        "payment_terms:character varying?",
+        "incoterms:character varying?",
+        "start_date:date*",
+        "end_date:date*",
+        "auto_renewal:boolean?",
+        "renewal_period_months:integer?",
+        "default_lead_time_days:integer?",
+        "delivery_terms:character varying?",
+        "delivery_location:text?",
+        "status:character varying",
+        "approval_status:character varying?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "signed_contract_url:text?",
+        "contract_attachment_urls:ARRAY?",
+        "terms_and_conditions:text?",
+        "special_conditions:text?",
+        "expiry_notification_sent:boolean?",
+        "days_before_expiry_notification:integer?",
+        "linked_rfq_id:uuid?",
+        "linked_quotation_id:uuid?",
+        "notes:text?",
+        "internal_notes:text?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "submitted_for_approval_by:uuid?",
+        "submitted_for_approval_at:timestamp without time zone?",
+        "approval_notes:text?",
+        "rejection_reason:text?",
+        "rejected_by:uuid?",
+        "rejected_at:timestamp without time zone?",
+        "sent_to_customer_at:timestamp without time zone?",
+        "sent_by:uuid?",
+        "customer_response_token:character varying?",
+        "customer_signed_at:timestamp without time zone?",
+        "customer_signature_data:text?",
+        "fully_executed_at:timestamp without time zone?",
+        "customer_response_date:timestamp without time zone?",
+        "customer_response_action:character varying?",
+        "customer_response_comments:text?",
+        "customer_response_name:character varying?",
+        "customer_response_email:character varying?"
+      ],
+      "required_fields": [
+        "contract_number",
+        "contract_name",
+        "start_date",
+        "end_date",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "rejected_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sent_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "submitted_for_approval_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_order_items": {
+      "columns": [
+        "id:uuid",
+        "sales_order_id:uuid*",
+        "line_number:integer*",
+        "inventory_item_id:uuid?",
+        "item_code:character varying?",
+        "item_name:character varying*",
+        "item_description:text?",
+        "quantity:numeric*",
+        "unit_of_measure:character varying*",
+        "unit_price:numeric*",
+        "discount_percentage:numeric?",
+        "discount_amount:numeric?",
+        "line_total:numeric*",
+        "requested_delivery_date:date?",
+        "promised_delivery_date:date?",
+        "quantity_reserved:numeric?",
+        "quantity_delivered:numeric?",
+        "quantity_invoiced:numeric?",
+        "notes:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_order_id",
+        "line_number",
+        "item_name",
+        "quantity",
+        "unit_of_measure",
+        "unit_price",
+        "line_total"
+      ],
+      "foreign_keys": [
+        {
+          "column": "inventory_item_id",
+          "references_table": "inventory_items",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_order_status_history": {
+      "columns": [
+        "id:uuid",
+        "sales_order_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "status_date:timestamp with time zone?",
+        "changed_by:uuid?",
+        "reason:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_order_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_orders": {
+      "columns": [
+        "id:uuid",
+        "so_number:character varying*",
+        "customer_id:uuid*",
+        "customer_name:character varying*",
+        "order_date:date",
+        "delivery_date:date?",
+        "reference_number:character varying?",
+        "currency:character varying",
+        "subtotal:numeric?",
+        "tax_amount:numeric?",
+        "discount_amount:numeric?",
+        "total_amount:numeric?",
+        "status:character varying",
+        "priority:character varying?",
+        "requires_approval:boolean?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "approval_notes:text?",
+        "delivery_address:text?",
+        "delivery_instructions:text?",
+        "shipping_method:character varying?",
+        "notes:text?",
+        "internal_notes:text?",
+        "payment_terms:character varying?",
+        "delivery_terms:character varying?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "approval_status:character varying?",
+        "approval_required_amount:numeric?",
+        "approval_requested_by:uuid?",
+        "approval_requested_at:timestamp without time zone?",
+        "rejected_by:uuid?",
+        "rejected_at:timestamp without time zone?",
+        "rejection_reason:text?",
+        "customer_response_token:character varying?",
+        "customer_response_date:timestamp without time zone?",
+        "customer_response_action:character varying?",
+        "customer_response_comments:text?",
+        "customer_response_name:character varying?",
+        "customer_response_email:character varying?",
+        "customer_delivery_token:character varying?",
+        "customer_delivery_confirmed_at:timestamp with time zone?",
+        "customer_delivery_issue_reported_at:timestamp with time zone?",
+        "customer_delivery_notes:text?"
+      ],
+      "required_fields": [
+        "so_number",
+        "customer_id",
+        "customer_name",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approval_requested_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "rejected_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_quotation_items": {
+      "columns": [
+        "id:uuid",
+        "sales_quotation_id:uuid*",
+        "line_number:integer*",
+        "inventory_item_id:uuid?",
+        "item_code:character varying?",
+        "item_name:character varying*",
+        "item_description:text?",
+        "quantity:numeric*",
+        "unit_of_measure:character varying*",
+        "unit_price:numeric*",
+        "discount_percentage:numeric?",
+        "discount_amount:numeric?",
+        "line_total:numeric*",
+        "estimated_delivery_date:date?",
+        "notes:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "sourcing_type:character varying?",
+        "source_bin_id:uuid?",
+        "linked_sales_rfq_id:integer?",
+        "supplier_id:uuid?",
+        "supplier_name:character varying?",
+        "estimated_supplier_cost:numeric?",
+        "margin_percentage:numeric?",
+        "margin_amount:numeric?"
+      ],
+      "required_fields": [
+        "sales_quotation_id",
+        "line_number",
+        "item_name",
+        "quantity",
+        "unit_of_measure",
+        "unit_price",
+        "line_total"
+      ],
+      "foreign_keys": [
+        {
+          "column": "inventory_item_id",
+          "references_table": "inventory_items",
+          "references_column": "id"
+        },
+        {
+          "column": "linked_sales_rfq_id",
+          "references_table": "sales_rfqs",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_quotation_id",
+          "references_table": "sales_quotations",
+          "references_column": "id"
+        },
+        {
+          "column": "source_bin_id",
+          "references_table": "bins",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_quotation_status_history": {
+      "columns": [
+        "id:uuid",
+        "sales_quotation_id:uuid*",
+        "from_status:character varying?",
+        "to_status:character varying*",
+        "status_date:timestamp with time zone?",
+        "changed_by:uuid?",
+        "reason:text?",
+        "notes:text?",
+        "created_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_quotation_id",
+        "to_status"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_quotation_id",
+          "references_table": "sales_quotations",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_quotations": {
+      "columns": [
+        "id:uuid",
+        "quotation_number:character varying*",
+        "customer_id:uuid*",
+        "customer_name:character varying*",
+        "quotation_date:date",
+        "valid_until:date*",
+        "reference_number:character varying?",
+        "currency:character varying",
+        "subtotal:numeric?",
+        "tax_amount:numeric?",
+        "discount_amount:numeric?",
+        "total_amount:numeric?",
+        "status:character varying",
+        "priority:character varying?",
+        "converted_to_so:boolean?",
+        "sales_order_id:uuid?",
+        "converted_at:timestamp with time zone?",
+        "converted_by:uuid?",
+        "delivery_address:text?",
+        "delivery_terms:character varying?",
+        "estimated_delivery_days:integer?",
+        "notes:text?",
+        "internal_notes:text?",
+        "terms_and_conditions:text?",
+        "payment_terms:character varying?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "deleted_at:timestamp with time zone?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "rejected_by:uuid?",
+        "rejected_at:timestamp with time zone?",
+        "rejection_reason:text?",
+        "send_requested_by:uuid?",
+        "send_requested_at:timestamp with time zone?",
+        "send_approved_by:uuid?",
+        "send_approved_at:timestamp with time zone?",
+        "customer_response_token:character varying?",
+        "customer_responded_at:timestamp with time zone?",
+        "customer_response_notes:text?",
+        "sent_to_customer_at:timestamp with time zone?",
+        "sent_by:uuid?",
+        "accepted_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "quotation_number",
+        "customer_id",
+        "customer_name",
+        "valid_until",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "converted_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "rejected_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_order_id",
+          "references_table": "sales_orders",
+          "references_column": "id"
+        },
+        {
+          "column": "send_approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "send_requested_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sent_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_rfq_communications": {
+      "columns": [
+        "id:integer",
+        "sales_rfq_id:integer*",
+        "communication_type:character varying*",
+        "direction:character varying?",
+        "subject:character varying?",
+        "message_content:text?",
+        "sender_name:character varying?",
+        "sender_email:character varying?",
+        "recipient_name:character varying?",
+        "recipient_email:character varying?",
+        "attachment_urls:ARRAY?",
+        "created_by:uuid?",
+        "created_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "sales_rfq_id",
+        "communication_type"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_rfq_id",
+          "references_table": "sales_rfqs",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_rfq_item_responses": {
+      "columns": [
+        "id:uuid",
+        "response_id:uuid*",
+        "sales_rfq_item_id:integer?",
+        "item_name:character varying*",
+        "requested_quantity:numeric*",
+        "unit_of_measure:character varying*",
+        "quoted_unit_price:numeric*",
+        "quoted_total_price:numeric*",
+        "availability_status:character varying?",
+        "lead_time_days:integer?",
+        "supplier_notes:text?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "response_id",
+        "item_name",
+        "requested_quantity",
+        "unit_of_measure",
+        "quoted_unit_price",
+        "quoted_total_price"
+      ],
+      "foreign_keys": [
+        {
+          "column": "response_id",
+          "references_table": "sales_rfq_supplier_responses",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_rfq_items": {
+      "columns": [
+        "id:integer",
+        "sales_rfq_id:integer*",
+        "line_number:integer*",
+        "item_id:uuid?",
+        "item_name:character varying*",
+        "item_description:text?",
+        "item_specification:text?",
+        "requested_quantity:numeric*",
+        "unit_of_measure:character varying*",
+        "estimated_unit_price:numeric?",
+        "quoted_unit_price:numeric?",
+        "quoted_total_price:numeric?",
+        "supplier_lead_time_days:integer?",
+        "supplier_minimum_order_quantity:numeric?",
+        "supplier_item_code:character varying?",
+        "supplier_brand:character varying?",
+        "supplier_availability_status:character varying?",
+        "supplier_item_notes:text?",
+        "supplier_alternative_item_name:character varying?",
+        "supplier_alternative_unit_price:numeric?",
+        "supplier_alternative_description:text?",
+        "created_at:timestamp without time zone?",
+        "updated_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "sales_rfq_id",
+        "line_number",
+        "item_name",
+        "requested_quantity",
+        "unit_of_measure"
+      ],
+      "foreign_keys": [
+        {
+          "column": "item_id",
+          "references_table": "items",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_rfq_id",
+          "references_table": "sales_rfqs",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_rfq_status_history": {
+      "columns": [
+        "id:integer",
+        "sales_rfq_id:integer*",
+        "status:character varying*",
+        "previous_status:character varying?",
+        "changed_by:uuid*",
+        "change_reason:text?",
+        "changed_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "sales_rfq_id",
+        "status",
+        "changed_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "changed_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_rfq_id",
+          "references_table": "sales_rfqs",
+          "references_column": "id"
+        }
+      ]
+    },
+    "sales_rfq_supplier_responses": {
+      "columns": [
+        "id:uuid",
+        "sales_rfq_id:integer*",
+        "supplier_total_amount:numeric?",
+        "supplier_currency:character varying?",
+        "supplier_validity_days:integer?",
+        "supplier_comments:text?",
+        "supplier_alternative_items:text?",
+        "supplier_response_method:character varying?",
+        "responded_at:timestamp with time zone?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "sales_rfq_id"
+      ],
+      "foreign_keys": []
+    },
+    "sales_rfqs": {
+      "columns": [
+        "id:integer",
+        "rfq_number:character varying*",
+        "rfq_title:character varying*",
+        "supplier_id:uuid?",
+        "supplier_name:character varying?",
+        "supplier_email:character varying?",
+        "supplier_contact_person:character varying?",
+        "supplier_phone:character varying?",
+        "request_type:character varying?",
+        "required_delivery_date:date?",
+        "delivery_location:character varying?",
+        "delivery_terms:character varying?",
+        "payment_terms:character varying?",
+        "status:character varying?",
+        "priority:character varying?",
+        "response_deadline:date?",
+        "response_received_at:timestamp without time zone?",
+        "supplier_response_method:character varying?",
+        "special_requirements:text?",
+        "terms_and_conditions:text?",
+        "internal_notes:text?",
+        "attachment_urls:ARRAY?",
+        "linked_customer_id:uuid?",
+        "linked_sales_quotation_id:integer?",
+        "source_document_type:character varying?",
+        "source_document_id:integer?",
+        "supplier_total_amount:numeric?",
+        "supplier_currency:character varying?",
+        "supplier_validity_days:integer?",
+        "supplier_comments:text?",
+        "supplier_alternative_items:text?",
+        "created_by:uuid*",
+        "updated_by:uuid?",
+        "created_at:timestamp without time zone?",
+        "updated_at:timestamp without time zone?",
+        "deleted_at:timestamp without time zone?",
+        "sales_approval_status:character varying?",
+        "sales_approved_by:uuid?",
+        "sales_approved_at:timestamp with time zone?",
+        "sales_approval_notes:text?",
+        "procurement_approval_status:character varying?",
+        "procurement_approved_by:uuid?",
+        "procurement_approved_at:timestamp with time zone?",
+        "procurement_approval_notes:text?",
+        "overall_approval_status:character varying?",
+        "response_token:character varying?",
+        "sent_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "rfq_number",
+        "rfq_title",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "linked_customer_id",
+          "references_table": "customers",
+          "references_column": "id"
+        },
+        {
+          "column": "procurement_approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "sales_approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        },
+        {
+          "column": "updated_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "storage_locations": {
+      "columns": [
+        "id:uuid",
+        "code:character varying*",
+        "name:character varying*",
+        "country:character varying*",
+        "city:character varying*",
+        "address:text*",
+        "postal_code:character varying*",
+        "description:text?",
+        "is_active:boolean?",
+        "user_id:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "status:character varying?",
+        "decline_reason:text?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "declined_by:uuid?",
+        "declined_at:timestamp with time zone?",
+        "max_mass_capacity:numeric?",
+        "max_volume_capacity:numeric?",
+        "current_mass_used:numeric",
+        "current_volume_used:numeric"
+      ],
+      "required_fields": [
+        "code",
+        "name",
+        "country",
+        "city",
+        "address",
+        "postal_code"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "declined_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "supplier_items": {
+      "columns": [
+        "id:uuid",
+        "supplier_id:uuid*",
+        "item_id:uuid*",
+        "unit_price:numeric?",
+        "currency:character varying?",
+        "minimum_order_quantity:integer?",
+        "lead_time_days:integer?",
+        "is_preferred:boolean?",
+        "notes:text?",
+        "status:character varying?",
+        "created_by:uuid?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "supplier_confirmed:boolean?",
+        "supplier_confirmed_at:timestamp without time zone?",
+        "confirmation_token:character varying?",
+        "confirmation_requested_at:timestamp without time zone?",
+        "supplier_rejection_reason:text?"
+      ],
+      "required_fields": [
+        "supplier_id",
+        "item_id"
+      ],
+      "foreign_keys": [
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "item_id",
+          "references_table": "inventory_items",
+          "references_column": "id"
+        },
+        {
+          "column": "supplier_id",
+          "references_table": "suppliers",
+          "references_column": "id"
+        }
+      ]
+    },
+    "suppliers": {
+      "columns": [
+        "id:uuid",
+        "supplier_code:character varying*",
+        "legal_name:character varying*",
+        "trade_name:character varying?",
+        "email:character varying?",
+        "phone:character varying?",
+        "address:text?",
+        "country:character varying?",
+        "city:character varying?",
+        "postal_code:character varying?",
+        "supplier_type:character varying?",
+        "certification_status:character varying?",
+        "payment_terms:character varying?",
+        "currency:character varying?",
+        "status:character varying?",
+        "created_by:uuid?",
+        "approved_by:uuid?",
+        "approved_at:timestamp with time zone?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?",
+        "partnership_status:character varying?",
+        "partnership_accepted_at:timestamp with time zone?",
+        "partnership_declined_at:timestamp with time zone?",
+        "decline_reason:text?"
+      ],
+      "required_fields": [
+        "supplier_code",
+        "legal_name"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    },
+    "users": {
+      "columns": [
+        "id:uuid",
+        "email:character varying*",
+        "password_hash:character varying*",
+        "first_name:character varying*",
+        "last_name:character varying*",
+        "role:character varying",
+        "is_active:boolean?",
+        "last_login:timestamp with time zone?",
+        "created_at:timestamp with time zone?",
+        "updated_at:timestamp with time zone?"
+      ],
+      "required_fields": [
+        "email",
+        "password_hash",
+        "first_name",
+        "last_name"
+      ],
+      "foreign_keys": []
+    },
+    "warehouse_transaction_audit_log": {
+      "columns": [
+        "id:uuid",
+        "warehouse_transaction_id:uuid*",
+        "action:character varying*",
+        "previous_status:character varying?",
+        "new_status:character varying?",
+        "field_changed:character varying?",
+        "old_value:text?",
+        "new_value:text?",
+        "user_id:uuid*",
+        "user_agent:text?",
+        "ip_address:inet?",
+        "created_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "warehouse_transaction_id",
+        "action",
+        "user_id"
+      ],
+      "foreign_keys": [
+        {
+          "column": "user_id",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "warehouse_transaction_id",
+          "references_table": "warehouse_transactions",
+          "references_column": "id"
+        }
+      ]
+    },
+    "warehouse_transaction_items": {
+      "columns": [
+        "id:uuid",
+        "warehouse_transaction_id:uuid*",
+        "inventory_item_id:uuid?",
+        "item_name:character varying*",
+        "item_description:text?",
+        "quantity:numeric*",
+        "received_quantity:numeric?",
+        "issued_quantity:numeric?",
+        "return_quantity:numeric?",
+        "transfer_quantity:numeric?",
+        "physical_quantity:numeric?",
+        "adjustment_quantity:numeric?",
+        "unit_of_measure:character varying",
+        "unit_cost:numeric?",
+        "total_cost:numeric?",
+        "source_storage_location_id:uuid?",
+        "source_bin_id:uuid?",
+        "destination_storage_location_id:uuid?",
+        "destination_bin_id:uuid?",
+        "condition:character varying?",
+        "reason_code:character varying*",
+        "batch_number:character varying?",
+        "expiry_date:date?",
+        "serial_number:character varying?",
+        "notes:text?",
+        "created_at:timestamp without time zone?",
+        "updated_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "warehouse_transaction_id",
+        "item_name",
+        "quantity",
+        "reason_code"
+      ],
+      "foreign_keys": [
+        {
+          "column": "destination_bin_id",
+          "references_table": "bins",
+          "references_column": "id"
+        },
+        {
+          "column": "destination_storage_location_id",
+          "references_table": "storage_locations",
+          "references_column": "id"
+        },
+        {
+          "column": "inventory_item_id",
+          "references_table": "inventory_items",
+          "references_column": "id"
+        },
+        {
+          "column": "source_bin_id",
+          "references_table": "bins",
+          "references_column": "id"
+        },
+        {
+          "column": "source_storage_location_id",
+          "references_table": "storage_locations",
+          "references_column": "id"
+        },
+        {
+          "column": "warehouse_transaction_id",
+          "references_table": "warehouse_transactions",
+          "references_column": "id"
+        }
+      ]
+    },
+    "warehouse_transactions": {
+      "columns": [
+        "id:uuid",
+        "transaction_number:character varying*",
+        "transaction_type:character varying*",
+        "transaction_date:date",
+        "reference_document:character varying?",
+        "reference_type:character varying?",
+        "reference_id:uuid?",
+        "return_type:character varying?",
+        "transfer_type:character varying?",
+        "adjustment_type:character varying?",
+        "cost_center:character varying?",
+        "job_reference:character varying?",
+        "status:character varying",
+        "requires_approval:boolean?",
+        "approved_by:uuid?",
+        "approved_at:timestamp without time zone?",
+        "total_quantity:numeric?",
+        "total_value:numeric?",
+        "notes:text?",
+        "created_by:uuid*",
+        "processed_by:uuid?",
+        "created_at:timestamp without time zone?",
+        "updated_at:timestamp without time zone?"
+      ],
+      "required_fields": [
+        "transaction_number",
+        "transaction_type",
+        "created_by"
+      ],
+      "foreign_keys": [
+        {
+          "column": "approved_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "created_by",
+          "references_table": "users",
+          "references_column": "id"
+        },
+        {
+          "column": "processed_by",
+          "references_table": "users",
+          "references_column": "id"
+        }
+      ]
+    }
+  }
+}

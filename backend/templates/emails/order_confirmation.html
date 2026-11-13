@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - {{so_number}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #059669;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9fafb;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+        }
+        .order-details {
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .amount {
+            background-color: #059669;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #374151;
+            color: #d1d5db;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            text-align: center;
+        }
+        .footer a {
+            color: #60a5fa;
+        }
+        .button {
+            display: inline-block;
+            background-color: #059669;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .button:hover {
+            background-color: #047857;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #059669;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f3f4f6;
+            font-weight: bold;
+        }
+        .shipping-info {
+            background-color: #e0f2fe;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid #0284c7;
+        }
+        .timeline {
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .timeline-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #059669;
+            color: white;
+            text-align: center;
+            font-size: 12px;
+            line-height: 20px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{company_name}}</h1>
+        <h2>Order Confirmation</h2>
+    </div>
+    
+    <div class="content">
+        <div class="success">
+            <h3>✅ Your Order Has Been Confirmed!</h3>
+            <p>Thank you for your order, {{customer_name}}. We have received and confirmed your order.</p>
+        </div>
+        
+        <div class="order-details">
+            <table>
+                <tr>
+                    <th>Order Number:</th>
+                    <td><strong>{{so_number}}</strong></td>
+                </tr>
+                <tr>
+                    <th>Order Date:</th>
+                    <td>{{order_date}}</td>
+                </tr>
+                <tr>
+                    <th>Expected Delivery:</th>
+                    <td>{{delivery_date}}</td>
+                </tr>
+                <tr>
+                    <th>Shipping Method:</th>
+                    <td>{{shipping_method}}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="amount">
+            Order Total: {{currency}} {{total_amount}}
+        </div>
+        
+        <div class="shipping-info">
+            <h3>🚛 Shipping & Delivery Information</h3>
+            <p><strong>Shipping Method:</strong> {{shipping_method}}</p>
+            <p><strong>Expected Delivery Date:</strong> {{delivery_date}}</p>
+            <p>We will send you a shipping notification with tracking information once your order is dispatched.</p>
+        </div>
+        
+        <div class="timeline">
+            <h3>📋 Order Processing Timeline</h3>
+            <div class="timeline-item">
+                <div class="timeline-icon">✓</div>
+                <div><strong>Order Confirmed</strong> - Your order has been received and confirmed</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon">2</div>
+                <div><strong>Processing</strong> - We are preparing your items for shipment</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon">3</div>
+                <div><strong>Shipped</strong> - You'll receive tracking information</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon">4</div>
+                <div><strong>Delivered</strong> - Your order arrives at the specified address</div>
+            </div>
+        </div>
+        
+        <p><strong>What Happens Next?</strong></p>
+        <ul>
+            <li>We will begin processing your order immediately</li>
+            <li>You will receive a shipping confirmation email with tracking details</li>
+            <li>You can contact us anytime for order status updates</li>
+            <li>We will notify you when your order is delivered</li>
+        </ul>
+        
+        <div style="text-align: center;">
+            <a href="mailto:{{company_email}}?subject=Order {{so_number}} - Status Inquiry" class="button">
+                Contact Customer Service
+            </a>
+        </div>
+        
+        <p><strong>Order Details:</strong></p>
+        <p>Complete order details including itemized list, quantities, and specifications are attached to this email for your records.</p>
+        
+        <p><strong>Important Information:</strong></p>
+        <ul>
+            <li>Please keep this confirmation email for your records</li>
+            <li>Any changes to your order must be requested within 24 hours</li>
+            <li>Delivery address changes may affect delivery timeline</li>
+        </ul>
+        
+        <p>Thank you for choosing {{company_name}}. We appreciate your business and look forward to serving you.</p>
+        
+        <p>Best regards,<br>
+        Sales & Customer Service Team<br>
+        {{company_name}}</p>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Contact Information</strong></p>
+        <p>Email: <a href="mailto:{{company_email}}">{{company_email}}</a></p>
+        <p>Phone: {{company_phone}}</p>
+        <p>Order Number: {{so_number}} - Please reference this in all communications</p>
+    </div>
+</body>
+</html>

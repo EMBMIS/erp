@@ -1,0 +1,226 @@
+# Local / self-hosted stack.
+#
+# SECRETS COME FROM .env, NEVER FROM THIS FILE.
+# ---------------------------------------------------------------------------
+# This file previously carried a literal JWT_SECRET and database password while
+# also declaring NODE_ENV=production. Committed credentials are a problem the
+# moment they exist: they end up in clones, in forks, in CI logs, and in the
+# shell history of anyone who ever pasted the file — and rotating them means
+# finding every one of those places. A secret in git is not a secret.
+#
+# The `${VAR:?message}` form below fails the `docker compose up` outright, with
+# that message, when a variable is unset. That is deliberate: a stack that
+# refuses to start is far better than one that starts with a default everybody
+# shares. Copy .env.example to .env and fill it in.
+#
+#   cp .env.example .env
+#   # edit .env — generate a secret with: openssl rand -base64 48
+#   docker compose up --build
+
+services:
+  postgres:
+    # pgvector/pgvector ships the pgvector extension on top of the same
+    # official postgres image (pg16 tag == postgres:16), so similarity search
+    # (HNSW-indexed vector columns) works out of the box in every environment
+    # this compose file stands up — no separate extension install step.
+    image: pgvector/pgvector:pg16
+    container_name: qira-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-qira_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-qira}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      # Consumed by docker/postgres-init/10-create-app-role.sh on first boot
+      # (empty volume only) to create the restricted qira_app role that
+      # company isolation (migrations 110-112) requires — POSTGRES_USER is a
+      # superuser and therefore always bypasses row-level security, so it can
+      # never be the app's own runtime role. See that script's header and
+      # DATABASE_URL/MIGRATION_DATABASE_URL below.
+      # Quoted because the message contains ": ". Unquoted, go-yaml reads that
+      # as a nested mapping and the whole file fails to parse with
+      # `mapping values are not allowed in this context` — docker compose then
+      # refuses to do anything at all, which is a confusing way to discover a
+      # typo in an error string. Same bug the CI workflow had.
+      APP_DB_PASSWORD: "${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env — generate with openssl rand -hex 24}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    # Bound to loopback rather than 0.0.0.0. The previous '5432:5432' exposed
+    # the database on every interface of the host, which on any machine with a
+    # public IP puts Postgres straight on the internet.
+    # Host port is overridable (POSTGRES_PORT) for machines that already have
+    # a native Postgres bound to 5432 — the container's own port stays 5432,
+    # so the other services here (which talk to it over the compose network
+    # as "postgres:5432") are unaffected either way.
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-qira} -d ${POSTGRES_DB:-qira_erp}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Schema migrations, as their own one-shot service.
+  #
+  # Running them from the API's start command means N replicas race to migrate
+  # the same database. This runs once, must exit 0, and only then does the API
+  # start — so the app never serves traffic against a schema it expects but the
+  # database does not have.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qira-migrate
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-qira}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      DB_SSL: 'false'
+    command: ['node', 'scripts/db-migrate.js']
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qira-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # Loads the application's own configuration — SMTP, AI keys, tax defaults,
+    # feature flags. Without it the container received only the 11 variables
+    # listed below, which is why a live deployment sent no email and offered no
+    # AI: nodemailer got undefined for user/pass and failed at auth, and
+    # OPENAI_API_KEY resolved to the empty default, so isAIEnabled() was false.
+    # Neither failure is loud — both degrade silently, which is what made this
+    # look like "the app is broken" rather than "the app is unconfigured".
+    #
+    # Note backend/.env is NOT baked into this image: backend/.dockerignore
+    # excludes it and governs this build (context: ./backend). Only the Cloud
+    # Run image at the repo root ships the file. Mounting it as env_file keeps
+    # secrets out of the layer while still delivering them at runtime.
+    #
+    # `environment:` below WINS over env_file on conflicts, which is load
+    # bearing: backend/.env points DATABASE_URL at localhost:5433, correct on a
+    # laptop and meaningless inside this network.
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      # Public origin, used to build links inside outbound email. Defaults to
+      # CORS_ORIGIN because that is already the public URL; left to
+      # backend/.env these would be localhost and every emailed link — supplier
+      # portal, delivery confirmation, password reset — would be dead on
+      # arrival for the recipient.
+      BASE_URL: ${BASE_URL:-${CORS_ORIGIN:-http://localhost:3000}}
+      FRONTEND_URL: ${FRONTEND_URL:-${CORS_ORIGIN:-http://localhost:3000}}
+      # Runs as qira_app (restricted, NOBYPASSRLS) rather than the postgres
+      # owner — see docker/postgres-init/10-create-app-role.sh and migration
+      # 111. A superuser connection here would silently defeat company
+      # isolation the moment it's enabled.
+      DATABASE_URL: postgres://qira_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      # Must be set here even though it duplicates DATABASE_URL exactly.
+      #
+      # config/database.js PREFERS APP_DATABASE_URL for the app's own pool, and
+      # backend/.env defines it as localhost:5433 — a laptop address that is
+      # nothing inside this network. Pulled in by env_file and left
+      # unoverridden, it would beat the correct DATABASE_URL above and the
+      # backend would fail to reach the database at all, which is a worse
+      # failure than the missing SMTP config this env_file was added to fix.
+      APP_DATABASE_URL: postgres://qira_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      # The schema connection, used by ONE thing: the application platform's
+      # deployer (services/platform/deployer.js), which creates a company's
+      # tables when a generated application is deployed. Creating a table needs
+      # ownership, and the two connections above are deliberately the
+      # restricted qira_app role.
+      #
+      # This is a real widening and worth being precise about. It is NOT the
+      # pool that serves requests — that stays qira_app, so company isolation
+      # is enforced by the database for every ordinary read and write. This
+      # connection is reachable only from the deployer, and the deployer only
+      # ever executes statements the schema compiler produced from a plan a
+      # person approved: no model-supplied SQL, no caller-supplied identifiers.
+      #
+      # Leave it unset and the platform still runs; deploying an application
+      # then refuses up front with DDL_PRIVILEGE_MISSING naming this variable,
+      # rather than failing halfway through a transaction. Every other feature
+      # is unaffected.
+      MIGRATION_DATABASE_URL: postgres://${POSTGRES_USER:-qira}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      # Scheduled automations declared by generated applications. Off by
+      # default for the same reason the agent and report schedulers are: the
+      # actions it dispatches notify people.
+      PLATFORM_SCHEDULER_ENABLED: ${PLATFORM_SCHEDULER_ENABLED:-false}
+      DB_SSL: 'false'
+      # Roomier than the laptop default (10): under company isolation every
+      # statement checks out its own pooled connection, and a page load that
+      # fires ~10 parallel requests can saturate a pool of 10 and queue the
+      # rest for tens of seconds — which read to the user as a "hanging"
+      # save. 25 stays well under the container's 100-connection budget.
+      DB_POOL_MAX: ${DB_POOL_MAX:-25}
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET in .env — generate with: openssl rand -base64 48}"
+      SUPPLIER_JWT_SECRET: ${SUPPLIER_JWT_SECRET:?Set SUPPLIER_JWT_SECRET in .env}
+      # Signs the embmis_sso cookie shared with embmis-web — see
+      # services/ssoCookie.js. Same origin as the ERP in production
+      # (embmis.com serves this app at /platform), so no COOKIE_DOMAIN is
+      # needed here, unlike JWT_SECRET/SUPPLIER_JWT_SECRET this has no
+      # existing var to reuse.
+      SSO_COOKIE_SECRET: "${SSO_COOKIE_SECRET:?Set SSO_COOKIE_SECRET in .env — generate with: openssl rand -base64 48}"
+      # "Sign in with Google" (routes/auth.js POST /google) — leave unset in
+      # .env to disable the Google button entirely; email/password still works.
+      GOOGLE_LOGIN_CLIENT_ID: ${GOOGLE_LOGIN_CLIENT_ID:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      # OPENAI_API_KEY and AI_MODEL are deliberately NOT set here.
+      #
+      # They used to be, as ${OPENAI_API_KEY:-} — an empty default read from the
+      # ROOT .env. Because `environment:` overrides env_file, that empty string
+      # won against the real key in backend/.env and silently disabled AI. The
+      # override was invisible: the variable was present, just blank, so
+      # isAIEnabled() returned false and every AI feature reported "not
+      # configured" while the key sat correctly in a file the container had.
+      #
+      # env_file now supplies both. To run without AI, remove the key from
+      # backend/.env rather than re-adding a blank override here.
+      # Both schedulers stay off unless deliberately enabled. Starting a
+      # container should not begin emailing customers or acting autonomously.
+      AGENT_SCHEDULER_ENABLED: ${AGENT_SCHEDULER_ENABLED:-false}
+      REPORT_SCHEDULER_ENABLED: ${REPORT_SCHEDULER_ENABLED:-false}
+    ports:
+      - '${BACKEND_PORT:-3001}:3001'
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://localhost:3001/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # The frontend was missing entirely — `docker compose up` produced an API
+  # with nothing to talk to it.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Vite inlines env at BUILD time, so this has to be a build arg. Setting
+        # it as a runtime environment variable does nothing, which is a
+        # genuinely confusing hour to lose.
+        #
+        # Default here is direct-access-friendly (no domain, no path prefix)
+        # for a plain `docker compose up`. For production use
+        # docker-compose.prod.yml (DEPLOY.md).
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    container_name: qira-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - '${FRONTEND_PORT:-3000}:80'
+
+volumes:
+  postgres_data:

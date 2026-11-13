@@ -1,0 +1,30 @@
+# EMBMIS ERP on its own host. Replace erp.example.com; Caddy obtains and renews the HTTPS certificate itself.
+erp.example.com {
+	encode zstd gzip
+	# API. Simeli streams its answers (SSE): do not buffer.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001 {
+			flush_interval -1
+		}
+	}
+	# Web app.
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
+
+# Under a path of a shared host instead (set APP_BASE_PATH=/erp in .env.production before building):
+#
+# example.com {
+# 	handle /erp/api/* {
+# 		uri strip_prefix /erp
+# 		reverse_proxy 127.0.0.1:3001 {
+# 			flush_interval -1
+# 		}
+# 	}
+# 	handle /erp/* {
+# 		uri strip_prefix /erp
+# 		reverse_proxy 127.0.0.1:3000
+# 	}
+# 	redir /erp /erp/ 301
+# }

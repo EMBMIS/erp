@@ -1,0 +1,11 @@
+-- barcode_scanning's nav_section was set to 'Inventory' to document that its
+-- nav link lives nested under the Inventory top-level item. But
+-- Layout.jsx's disabled-nav-item set is built from every disabled module's
+-- nav_section AND name combined — so disabling barcode_scanning (whose
+-- name, 'Barcode Scanning', already matches its own child link exactly) was
+-- also blacklisting the string 'Inventory' itself, hiding the entire
+-- Inventory top-level item even when the inventory module was enabled.
+-- name-matching alone is sufficient for a module whose nav link is a child
+-- item; nav_section is only needed for a module that maps to a whole
+-- top-level section (manufacturing, sales, crm, ...).
+UPDATE modules SET nav_section = NULL WHERE key = 'barcode_scanning';

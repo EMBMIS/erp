@@ -1,0 +1,11 @@
+EMBMIS ERP
+Copyright 2026 Rashad Yusubov
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+"EMBMIS" is a trademark of its owner. The Apache License does not grant permission to use it (section 6 of the
+License); a modified version distributed by others must not use the EMBMIS name or logo to identify itself.
+
+Third-party components are listed with their licences in each package's package.json and package-lock.json.
+The Noto Sans fonts in backend/assets/fonts (used for generated PDFs) are licensed under the SIL Open Font License 1.1
+(backend/assets/fonts/OFL.txt). The web app bundles the Instrument Sans and JetBrains Mono typefaces under the same licence.

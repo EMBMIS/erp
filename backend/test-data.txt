@@ -1,0 +1,5 @@
+{
+  "rfqId": 2,
+  "responseToken": "b5ad48d2f5ebae298c0a5bbaf13ea5810900d20fa2cf2e75f4f97a62364a1175",
+  "rfqNumber": "TEST-RFQ-1756393260.207032"
+}

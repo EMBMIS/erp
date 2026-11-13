@@ -1,0 +1,24 @@
+-- Add GOODS_ISSUED status to sales orders for inventory fulfillment workflow
+
+ALTER TABLE sales_orders DROP CONSTRAINT IF EXISTS sales_orders_status_check;
+
+ALTER TABLE sales_orders ADD CONSTRAINT sales_orders_status_check 
+CHECK (status IN (
+  'DRAFT',
+  'PENDING_APPROVAL', 
+  'APPROVED',
+  'SENT_TO_CUSTOMER',
+  'CONFIRMED',
+  'CUSTOMER_ACCEPTED',
+  'CUSTOMER_REJECTED',
+  'IN_PRODUCTION',
+  'GOODS_ISSUED',
+  'READY_FOR_DELIVERY',
+  'SHIPPED',
+  'DELIVERED',
+  'WAITING_CUSTOMER_DELIVERY_CONFIRMATION',
+  'DELIVERY_ISSUE_REPORTED',
+  'COMPLETED',
+  'CANCELLED',
+  'REJECTED'
+));

@@ -1,0 +1,270 @@
+name: EMBMIS ERP CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # pgvector, not stock postgres: the baseline schema needs the `vector`
+        # extension (CREATE EXTENSION vector), which the stock image does not
+        # ship — production runs pgvector/pgvector:pg16 for the same reason.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: qira
+          POSTGRES_PASSWORD: qira_test
+          POSTGRES_DB: qira_erp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Create restricted app role (before migrations)
+        # Migration 202608160200 records the application role and re-runs
+        # enable_multi_company() during db:migrate, which requires qira_app to
+        # already exist — so the role is created here, before the migration
+        # step. Mirrors docker/postgres-init/10-create-app-role.sh (which runs
+        # automatically on a fresh compose volume but cannot run on CI's stock
+        # postgres service image). Grants on an empty schema are no-ops;
+        # ALTER DEFAULT PRIVILEGES covers everything migrations create later.
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<-EOSQL
+            DO \$\$
+            BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'qira_app') THEN
+                CREATE ROLE qira_app LOGIN PASSWORD 'qira_app_ci_test' NOBYPASSRLS;
+              END IF;
+            END
+            \$\$;
+            GRANT CONNECT ON DATABASE qira_erp_test TO qira_app;
+            GRANT USAGE ON SCHEMA public TO qira_app;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO qira_app;
+            GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO qira_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO qira_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO qira_app;
+          EOSQL
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          PGPASSWORD: qira_test
+
+      - name: Run database migrations
+        run: cd backend && npm run db:migrate
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          DB_SSL: false
+          JWT_SECRET: ci_test_secret_not_for_production
+          SUPPLIER_JWT_SECRET: ci_test_supplier_secret
+
+      # enable_multi_company() itself stays a step CI takes deliberately (not
+      # baked into db:migrate) for the same reason that script gives: turning
+      # on isolation changes what "create a second company" does, and
+      # migrations shouldn't silently flip that. The role was already created
+      # above, before db:migrate ran.
+      - name: Enable company isolation
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<-EOSQL
+            SELECT enable_multi_company('qira_app');
+          EOSQL
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          PGPASSWORD: qira_test
+
+      # A fresh database is built from the baseline (schema + reference data),
+      # so it has no company; in production the first signup creates one. The
+      # suite resolves its ambient company as the default company and posts
+      # GL entries under the platform owner, so seed both, the way the first
+      # signup would. Without this every hook failed with "No default company
+      # is configured" and the run hung on the first file.
+      - name: Seed the default test company
+        run: cd backend && npm run test:seed
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          APP_DATABASE_URL: postgresql://qira_app:qira_app_ci_test@localhost:5432/qira_erp_test
+          JWT_SECRET: ci_test_secret_not_for_production
+          SUPPLIER_JWT_SECRET: ci_test_supplier_secret
+
+      # Ratchet. Errors always fail; the warning cap only ever moves DOWN, so
+      # cleanup is preserved and new noise has to be dealt with rather than
+      # absorbed. The previous cap (150) was never actually enforced — the
+      # step's `cd ..` bug made it fail before linting anything, and db:migrate
+      # died first for months after that, so the recorded number went stale
+      # while warnings accumulated. 170 restores the ratchet from the true
+      # current count (166) with headroom; from here it only moves down.
+      # Root tooling dependencies, same as the frontend job: the flat
+      # eslint.config.js at the repo root imports @eslint/js, globals and the
+      # React plugin packages, so backend linting needs root node_modules too.
+      # (The step previously ran `cd ..` from the repo root, escaping the
+      # checkout entirely — eslint then failed with "No files matching
+      # backend/" and backend never actually got linted.)
+      - name: Install root tooling dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint (ESLint)
+        run: npx eslint backend/ --max-warnings 170
+
+      - name: Smoke test (route loading)
+        run: cd backend && node --test tests/routes.smoke.test.js
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          APP_DATABASE_URL: postgresql://qira_app:qira_app_ci_test@localhost:5432/qira_erp_test
+          JWT_SECRET: ci_test_secret_not_for_production
+          SUPPLIER_JWT_SECRET: ci_test_supplier_secret
+
+      # config/database.js prefers APP_DATABASE_URL for the app's own pool
+      # when it's set — this is what makes the shipping configuration (RLS
+      # genuinely enforced, no bypass) the one under test, not a coincidence
+      # of which env var happened to be read.
+      - name: Run all tests
+        run: cd backend && npm run test:all
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          APP_DATABASE_URL: postgresql://qira_app:qira_app_ci_test@localhost:5432/qira_erp_test
+          JWT_SECRET: ci_test_secret_not_for_production
+          SUPPLIER_JWT_SECRET: ci_test_supplier_secret
+
+      # The tenant boundary, asserted as a schema invariant. Cheap, and it is
+      # what stops four parallel workstreams adding unscoped tables for months
+      # without anything objecting — the failure this guards is silent until a
+      # second tenant is onboarded and finds someone else's data.
+      - name: Tenancy guard
+        run: cd backend && npm run test:tenancy
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          APP_DATABASE_URL: postgresql://qira_app:qira_app_ci_test@localhost:5432/qira_erp_test
+          JWT_SECRET: ci_test_secret_not_for_production
+          SUPPLIER_JWT_SECRET: ci_test_supplier_secret
+
+      # The full drill: enables row-level security across every scoped table and
+      # attacks it from a role that cannot bypass it. Reconfigures the database,
+      # so it runs only on CI's disposable Postgres, never against a shared one.
+      - name: Multi-tenancy isolation drill
+        run: cd backend && npm run verify:tenancy
+        env:
+          DATABASE_URL: postgresql://qira:qira_test@localhost:5432/qira_erp_test
+          JWT_SECRET: ci_test_secret_not_for_production
+          SUPPLIER_JWT_SECRET: ci_test_supplier_secret
+
+      # Block scalar, not a plain one. As a plain scalar the `: ` inside
+      # "WARNING: AI evals…" parses as a nested mapping key, which made this
+      # whole workflow file invalid YAML — GitHub rejected every run at load
+      # with "This run likely failed because of a workflow file issue" and 0s
+      # duration, so none of the gates above had ever actually executed.
+      - name: AI evals
+        run: >-
+          cd backend && npm run ai:evals ||
+          echo "WARNING - AI evals skipped (no API key or model unavailable)"
+        continue-on-error: true
+
+      - name: Check for orphaned service modules
+        run: cd backend && npm run check:orphaned
+
+      - name: Check for duplicate migration prefixes
+        run: cd backend && npm run check:migration-prefixes
+
+      - name: Check for pending migrations
+        run: |
+          cd backend
+          # Count the per-file "  pending  <name>" lines. Counting every line
+          # containing "pending" also matched the summary line
+          # ("... applied, 0 pending"), so this step reported 1 pending
+          # migration and failed on every run.
+          PENDING=$(node scripts/db-migrate.js --status 2>&1 | grep -c "^  pending  " || true)
+          if [ "$PENDING" != "0" ]; then
+            echo "ERROR: $PENDING pending migration(s) detected. Run npm run db:migrate."
+            exit 1
+          fi
+          echo "All migrations applied."
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      # The lint, a11y and Playwright steps all run from the repo root and use
+      # root devDependencies (eslint 10, the plugins, @playwright/test). Without
+      # this the steps below fall back to npx fetching packages ad hoc, which is
+      # slow, unpinned, and silently linted a different ESLint than the one the
+      # config was written for.
+      #
+      # --legacy-peer-deps because eslint-plugin-jsx-a11y 6.10.2 is the newest
+      # release and its peer range stops at ESLint 9 while this repo is on 10.
+      # The rules are plain JSX AST checks and were verified to run correctly;
+      # see eslint.a11y.config.js for the full note.
+      - name: Install root tooling dependencies
+        run: npm ci --legacy-peer-deps
+
+      # Same ratchet as the backend. Currently 458.
+      # Accessibility rules are NOT counted here — they have their own config
+      # and their own budget, so neither number can hide a regression in the
+      # other.
+      - name: Lint (ESLint)
+        run: npx eslint frontend/ --max-warnings 470
+
+      # Accessibility ratchet. Currently 806, overwhelmingly form controls with
+      # no associated label. Only moves down; see scripts/check-a11y-budget.mjs.
+      - name: Accessibility budget
+        run: npm run check:a11y
+
+      - name: Check React Query caching adoption
+        run: cd frontend && npm run check:react-query
+
+      # Catches t() calls that resolve to something other than the useI18n
+      # binding. ESLint cannot: in `.map((t) => … t('ui.x') …)` the name IS
+      # defined, just bound to the mapped element, so the file lints clean and
+      # then throws "t is not a function" the first time that branch renders.
+      # The string-extraction codemod produced 28 of these across 8 files and
+      # only 12 were visible as no-undef errors.
+      - name: Check i18n translator bindings
+        run: cd frontend && npm run check:i18n-binding
+
+      - name: Run frontend unit tests
+        run: cd frontend && npm run test
+
+      - name: Build
+        run: cd frontend && npx vite build
+
+      # Guards the code-splitting work. Every page is lazy-loaded, which took
+      # the initial payload from ~3 MB to ~136 kB gzipped — and which one
+      # static import quietly undoes. Nothing else would catch that: the app
+      # still builds, still passes, and is simply slow again.
+      - name: Bundle size budget
+        run: cd frontend && node scripts/check-bundle-budget.js
+
+      # Playwright ships no browsers with the npm package — without this step the
+      # E2E job fails on a clean runner with "Executable doesn't exist".
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E cross-module journey tests
+        run: npx playwright test --config e2e/playwright.config.js
+
+

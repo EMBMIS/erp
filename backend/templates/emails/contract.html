@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract - {{contract_name}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #7c3aed;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9fafb;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+        }
+        .contract-details {
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .amount {
+            background-color: #7c3aed;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #374151;
+            color: #d1d5db;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            text-align: center;
+        }
+        .footer a {
+            color: #60a5fa;
+        }
+        .button {
+            display: inline-block;
+            background-color: #7c3aed;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .button:hover {
+            background-color: #6d28d9;
+        }
+        .important {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f3f4f6;
+            font-weight: bold;
+        }
+        .signature-section {
+            background-color: #e5e7eb;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{company_name}}</h1>
+        <h2>Sales Contract</h2>
+    </div>
+    
+    <div class="content">
+        <p>Dear {{customer_name}},</p>
+        
+        <p>We are pleased to provide you with the sales contract for our business agreement. Please review all terms and conditions carefully.</p>
+        
+        <div class="contract-details">
+            <table>
+                <tr>
+                    <th>Contract Name:</th>
+                    <td>{{contract_name}}</td>
+                </tr>
+                <tr>
+                    <th>Contract Number:</th>
+                    <td>{{contract_number}}</td>
+                </tr>
+                <tr>
+                    <th>Start Date:</th>
+                    <td>{{start_date}}</td>
+                </tr>
+                <tr>
+                    <th>End Date:</th>
+                    <td>{{end_date}}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="amount">
+            Contract Value: {{currency}} {{contract_value}}
+        </div>
+        
+        <div class="important">
+            <strong>📋 Contract Review Required</strong>
+            <p>Please carefully review the attached contract document. This contract contains important terms and conditions that govern our business relationship.</p>
+        </div>
+        
+        <p><strong>Contract Details:</strong></p>
+        <ul>
+            <li>All product specifications and deliverables are detailed in the attached document</li>
+            <li>Payment terms and schedules are clearly outlined</li>
+            <li>Service level agreements and performance metrics are defined</li>
+            <li>Termination clauses and procedures are specified</li>
+        </ul>
+        
+        <div class="signature-section">
+            <h3>📝 Next Steps for Contract Execution:</h3>
+            <ol>
+                <li><strong>Review:</strong> Carefully review all contract terms</li>
+                <li><strong>Questions:</strong> Contact us for any clarifications needed</li>
+                <li><strong>Approval:</strong> Obtain internal approvals as required</li>
+                <li><strong>Signature:</strong> Sign and return the contract document</li>
+                <li><strong>Activation:</strong> We will counter-sign and activate the contract</li>
+            </ol>
+        </div>
+        
+        {{response_section}}
+        
+        <p><strong>Important Legal Notice:</strong></p>
+        <p style="font-size: 14px; color: #6b7280;">
+            This contract becomes legally binding upon signature by both parties. Please ensure you understand all terms before signing. 
+            If you need legal review or have questions about any provisions, please contact us immediately.
+        </p>
+        
+        <p>We look forward to a successful business partnership.</p>
+        
+        <p>Best regards,<br>
+        Contracts Team<br>
+        {{company_name}}</p>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Contact Information</strong></p>
+        <p>Email: <a href="mailto:{{company_email}}">{{company_email}}</a></p>
+        <p>Phone: {{company_phone}}</p>
+        <p>This is an automated message. Please do not reply directly to this email address.</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+# Applies to any image built with the repo root as context — the Cloud Run
+# image (/Dockerfile) and docker/Dockerfile.prod.
+# backend/.dockerignore and frontend/.dockerignore cover their own
+# subdirectory-context builds (backend/Dockerfile, frontend/Dockerfile) and
+# are unaffected by this file.
+
+node_modules
+**/node_modules
+npm-debug.log*
+
+# Build output. The Cloud Run image builds the SPA itself in its first stage;
+# shipping a stale local dist/ into the context would be uploaded, ignored, and
+# occasionally confusing.
+frontend/dist/
+dist/
+
+# Translation working set — 337 files of machine-translated JSON that nothing
+# at runtime reads. Locale tables ship from frontend/src/i18n/locales.
+frontend/i18n-export/
+
+# Local agent session state.
+.codewhale/
+
+# backend/.env is DELIBERATELY shipped in the image.
+#
+# Deliberate owner decision for this single-tenant, private repo: baking the
+# file in means a Cloud Run revision boots with SMTP, AI and app config already
+# populated instead of 40-odd env vars being re-entered in the console. The
+# root .env stays excluded — it is compose-only and its values are wrong inside
+# a container.
+#
+# What this costs, so it is a known trade and not a surprise later:
+#   - `docker history` / any pull from Artifact Registry exposes the file, so
+#     registry pull access == credential access. Keep the registry private.
+#   - Rotating a key means rebuilding the image, not just editing a setting.
+#
+# dotenv does NOT override variables already in the environment, so anything
+# set on the Cloud Run service still wins over this file. DATABASE_URL must be
+# overridden there — the value here points at localhost:5433 and cannot resolve
+# in Cloud Run.
+.env
+!backend/.env
+!.env.example
+!**/.env.example
+
+.git
+.gitignore
+.vscode
+.idea
+
+# Docs, local scratch, and anything Docker never needs to see.
+*.md
+backups/
+tmp-server.log
+tmp_shell_runner/
+test-results/
+e2e/

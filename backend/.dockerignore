@@ -1,0 +1,47 @@
+# Keep the image to what actually runs in production.
+#
+# `COPY . .` previously pulled in the host's node_modules (wrong platform,
+# silently overwriting the ones npm ci had just built), any local .env, and the
+# two dozen one-off maintenance scripts sitting at the backend root —
+# clean-local-db.js, fix-all-boolean-filters.js, debug-*.js and friends. Those
+# last ones are the real problem: shipping a script whose job is to truncate
+# tables inside the production image means the only thing standing between a
+# tired operator and an empty database is remembering not to run it.
+
+node_modules
+npm-debug.log*
+
+# Never bake secrets into a layer.
+.env
+.env.*
+!.env.example
+
+# One-off maintenance and diagnostic scripts. Kept in the repo, kept out of the image.
+check-*.js
+fix-*.js
+debug-*.js
+clean-*.js
+test-*.js
+get-schema.js
+extract-schema.js
+simple-export.js
+simple-import.js
+create-render-user.js
+setup-*.js
+run_*.js
+optimize-local-postgres.sql
+
+# Test suites and their fixtures.
+tests/
+test-data.txt
+
+# Runtime output directories — created by the Dockerfile, never copied in.
+uploads/
+exports/
+
+# Docs and editor noise.
+*.md
+.git
+.gitignore
+.vscode
+.idea

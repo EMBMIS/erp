@@ -1,0 +1,131 @@
+# EMBMIS ERP — production, behind a reverse proxy (Caddy; see deploy/Caddyfile.example and DEPLOY.md) that terminates
+# TLS, so every port below is bound to loopback. By default the app is served at the root of its host (the web app at
+# /, the API at /api); set APP_BASE_PATH (e.g. /erp) to serve both under a path of a shared host instead.
+# EMBMIS Gateway, if you use it, is a separate project that this one reaches over HTTP.
+#
+#   cp deploy/env.production.example .env.production   # fill it in; it is never committed or baked into an image
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Compose refuses to start when a required secret is missing (${VAR:?message}) rather than falling back to a default.
+
+name: embmis-erp
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-qira_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-qira}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      # Creates the restricted qira_app role company isolation needs, on first boot of an empty volume.
+      APP_DB_PASSWORD: "${APP_DB_PASSWORD:?Set APP_DB_PASSWORD}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-qira} -d ${POSTGRES_DB:-qira_erp}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # `embmis-db` lets another compose project reach this database by the alias `embmis-postgres`: for example an
+    # EMBMIS Gateway that keeps its data here in its own schema and role (see the Gateway's DEPLOY.md). Unused otherwise.
+    networks:
+      internal:
+      embmis-db:
+        aliases: [embmis-postgres]
+
+  # Runs once and must exit 0 before the API starts, so no replica ever serves a schema the database lacks.
+  migrate:
+    build: { context: ./backend, dockerfile: Dockerfile }
+    restart: 'no'
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-qira}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      DB_SSL: 'false'
+    command: ['node', 'scripts/db-migrate.js']
+    networks: [internal]
+
+  backend:
+    build: { context: ./backend, dockerfile: Dockerfile }
+    restart: always
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-3001}:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # Public origins. CORS_ORIGIN is the web app; BASE_URL/FRONTEND_URL build the links in outbound email.
+      CORS_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN (e.g. https://erp.example.com)}
+      BASE_URL: ${APP_ORIGIN:?Set APP_ORIGIN}
+      FRONTEND_URL: ${APP_ORIGIN:?Set APP_ORIGIN}
+      # The path the app is served under: empty for the root of the host, e.g. /erp under a shared host.
+      APP_BASE_PATH: ${APP_BASE_PATH:-}
+      DATABASE_URL: postgres://qira_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      APP_DATABASE_URL: postgres://qira_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      MIGRATION_DATABASE_URL: postgres://${POSTGRES_USER:-qira}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qira_erp}
+      DB_SSL: 'false'
+      DB_POOL_MAX: ${DB_POOL_MAX:-25}
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET}"
+      SUPPLIER_JWT_SECRET: "${SUPPLIER_JWT_SECRET:?Set SUPPLIER_JWT_SECRET}"
+      SSO_COOKIE_SECRET: "${SSO_COOKIE_SECRET:?Set SSO_COOKIE_SECRET}"
+      # Encrypts stored secrets, including each company's EMBMIS Gateway agent key.
+      AI_VAULT_KEY: "${AI_VAULT_KEY:?Set AI_VAULT_KEY (32 bytes hex)}"
+      PLATFORM_OWNER_EMAIL: ${PLATFORM_OWNER_EMAIL:-}
+      # AI provider (optional): OPENAI_API_KEY, AI_MODEL, ... — pass through only what you use.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      # EMBMIS Gateway. Empty URL = off.
+      EMBMIS_GATEWAY_URL: ${EMBMIS_GATEWAY_URL:-}
+      EMBMIS_GATEWAY_PLATFORM_KEY: ${EMBMIS_GATEWAY_PLATFORM_KEY:-}
+      EMBMIS_GATEWAY_CONSOLE_URL: ${EMBMIS_GATEWAY_CONSOLE_URL:-}
+      EMBMIS_GATEWAY_FAIL_MODE: ${EMBMIS_GATEWAY_FAIL_MODE:-closed}
+      EMBMIS_GATEWAY_TIMEOUT_MS: ${EMBMIS_GATEWAY_TIMEOUT_MS:-3000}
+      # Schedulers act on their own and send email: opt in deliberately.
+      AGENT_SCHEDULER_ENABLED: ${AGENT_SCHEDULER_ENABLED:-false}
+      REPORT_SCHEDULER_ENABLED: ${REPORT_SCHEDULER_ENABLED:-false}
+      PLATFORM_SCHEDULER_ENABLED: ${PLATFORM_SCHEDULER_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    volumes:
+      - uploads:/app/uploads
+      - exports:/app/exports
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://localhost:3001/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks: [internal]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the bundle at build time (Vite): changing it means rebuilding the frontend.
+        VITE_API_URL: ${VITE_API_URL:-${APP_BASE_PATH:-}/api}
+        VITE_BASE_PATH: ${APP_BASE_PATH:-}/
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - '127.0.0.1:${FRONTEND_PORT:-3000}:80'
+    networks: [internal]
+
+networks:
+  internal:
+  embmis-db:
+    name: embmis-db
+
+volumes:
+  postgres_data:
+  uploads:
+  exports:
