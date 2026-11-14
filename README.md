@@ -7,6 +7,14 @@ in one system, with **Simeli**, an AI assistant that works on the company's own 
 Want it set up for your company, customised to your processes, or supported in production? [EMBMIS](https://embmis.com)
 offers setup, customisation and support.
 
+## Screenshots
+
+A made-up demo company:
+
+![Home: what needs a person today, and why](docs/screenshots/home.png)
+![Sales orders from draft to delivered](docs/screenshots/sales-orders.png)
+![Chart of accounts](docs/screenshots/chart-of-accounts.png)
+
 ## What is in it
 
 | Area | Highlights |
